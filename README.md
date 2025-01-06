@@ -10,7 +10,7 @@ Team role assignment and project setup
 
 Thumb rule at least 4-5 EPIC, 4-5 Feature, 4-5 User Story, 4-5 Task. 
 
-*Evaluation Criteria* 
+*Evaluation Criteria* :
 
 JIRA project configuration - login
 
