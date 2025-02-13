@@ -1,4 +1,14 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function LoginAdmin() {
+    const router = useRouter();
+    
+    const signInbutton = () => {
+        router.push("/home"); // Navigates to "/home" without any login checks
+    };
+
     return (
         <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
             <div className="w-full bg-slate-300 py-4 px-6 fixed top-0 left-0 text-black font-bold text-lg shadow-md">
@@ -16,7 +26,7 @@ export default function LoginAdmin() {
             </div>
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form action="#" method="POST" className="space-y-6">
+                <form action="#" className="space-y-6">
                     <div>
                         <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
                             Email address
@@ -26,7 +36,6 @@ export default function LoginAdmin() {
                                 id="email"
                                 name="email"
                                 type="email"
-                                required
                                 autoComplete="email"
                                 className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none"
                             />
@@ -49,7 +58,6 @@ export default function LoginAdmin() {
                                 id="password"
                                 name="password"
                                 type="password"
-                                required
                                 autoComplete="current-password"
                                 className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none"
                             />
@@ -58,18 +66,15 @@ export default function LoginAdmin() {
 
                     <div>
                         <button
-                            type="submit"
+                            type="button"
                             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={signInbutton}
                         >
                             Sign in
                         </button>
                     </div>
                 </form>
-
             </div>
         </div>
-
-    )
-
+    );
 }
-
