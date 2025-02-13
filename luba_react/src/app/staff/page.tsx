@@ -1,16 +1,16 @@
 import Link from "next/link";
-import LoginPage from "../components/loginPage";
+import StaffDashboard from "../../components/staffDashboard";
 
-export default function Home() {
+export default function Staff() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <LoginPage />
+      <StaffDashboard />
       <div className="mt-4 space-x-4">
+        <Link href="/">
+          <button className="px-4 py-2 bg-gray-500 text-white rounded-md">Go to Login</button>
+        </Link>
         <Link href="/admin">
           <button className="px-4 py-2 bg-blue-500 text-white rounded-md">Go to Admin</button>
-        </Link>
-        <Link href="/staff">
-          <button className="px-4 py-2 bg-green-500 text-white rounded-md">Go to Staff</button>
         </Link>
       </div>
     </div>
