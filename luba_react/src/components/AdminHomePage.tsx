@@ -1,6 +1,6 @@
 export default function adminHome(){
     return (
-        <h1>ADMIN HOME</h1>
+        <h1>STAFF HOME</h1>
     );
 
 }
