@@ -5,6 +5,7 @@ import { useState } from "react";
 
 export default function LoginAdmin() {
     const router = useRouter();
+<<<<<<< HEAD
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -34,6 +35,11 @@ export default function LoginAdmin() {
         } catch (err) {
             setError("Server error. Please try again.");
         }
+=======
+    
+    const signInbutton = () => {
+        router.push("/adminhome"); // Navigates to "/home" without any login checks
+>>>>>>> 44ccc15ae5f2d3fdfef1862db5c6b0a4c41efc51
     };
 
     return (
@@ -91,9 +97,14 @@ export default function LoginAdmin() {
                     <div>
                         <button
                             type="button"
+<<<<<<< HEAD
                             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             onClick={handleLogin}
                         >
+=======
+                            className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={signInbutton}>
+>>>>>>> 44ccc15ae5f2d3fdfef1862db5c6b0a4c41efc51
                             Sign in
                         </button>
                     </div>
