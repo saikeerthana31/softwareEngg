@@ -7,9 +7,10 @@ const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 5001;
 
+// Middleware
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: "*",  // Allows requests from any device
     methods: "GET,POST",
     allowedHeaders: "Content-Type,Authorization"
 }));
@@ -61,7 +62,6 @@ app.post("/api/login", async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                  // If you store names in DB
             };
             return res.json({ success: true, message: "Login successful", admin: adminUser });
         } else {
@@ -73,6 +73,22 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
+// Start server and listen on all network interfaces
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🌍 Access from local network at: http://${getLocalIp()}:${PORT}`);
 });
+
+// Function to get the local IP address
+function getLocalIp() {
+    const os = require("os");
+    const interfaces = os.networkInterfaces();
+    for (let iface of Object.values(interfaces)) {
+        for (let details of iface) {
+            if (details.family === "IPv4" && !details.internal) {
+                return details.address;
+            }
+        }
+    }
+    return "localhost"; // Fallback
+}
