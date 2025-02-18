@@ -1,11 +1,5 @@
-<<<<<<< HEAD
+
 "use client";
-=======
-export default function adminHome(){
-    return (
-        <h1>STAFF HOME</h1>
-    );
->>>>>>> 44ccc15ae5f2d3fdfef1862db5c6b0a4c41efc51
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
