@@ -1,12 +1,39 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginAdmin() {
     const router = useRouter();
-    
-    const signInbutton = () => {
-        router.push("/home"); // Navigates to "/home" without any login checks
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+
+    const handleLogin = async () => {
+        setError(""); 
+        try {
+            const response = await fetch("http://localhost:5001/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || "Login failed");
+            }
+
+            if (data.success && data.admin.role === "admin") {
+                localStorage.setItem("isAdminAuthenticated", "true");
+                localStorage.setItem("adminUser", JSON.stringify(data.admin)); // Store full admin object
+                console.log("Admin user stored in localStorage:", data.admin);
+                router.push("/home");
+            } else {
+                setError("Invalid admin credentials.");
+            }
+        } catch (err) {
+            setError("Server error. Please try again.");
+        }
     };
 
     return (
@@ -15,20 +42,16 @@ export default function LoginAdmin() {
                 Lab Utilization and Booking Application
             </div>
             <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                <img
-                    alt="Admin Login"
-                    src="/Admin.svg"
-                    className="h-[450px] w-[450px] mb-5"
-                />
-                <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+                <img alt="Admin Login" src="/Admin.jpg" className="h-auto w-auto mb-5" />
+                <h2 className="mt-10 text-center text-2xl font-bold text-gray-900">
                     Sign in to your account
                 </h2>
             </div>
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form action="#" className="space-y-6">
+                <form className="space-y-6">
                     <div>
-                        <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-900">
                             Email address
                         </label>
                         <div className="mt-2">
@@ -37,21 +60,18 @@ export default function LoginAdmin() {
                                 name="email"
                                 type="email"
                                 autoComplete="email"
-                                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none"
+                                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
                     </div>
 
                     <div>
                         <div className="flex items-center justify-between">
-                            <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-900">
                                 Password
                             </label>
-                            <div className="text-sm">
-                                <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                                    Forgot password?
-                                </a>
-                            </div>
                         </div>
                         <div className="mt-2">
                             <input
@@ -59,16 +79,20 @@ export default function LoginAdmin() {
                                 name="password"
                                 type="password"
                                 autoComplete="current-password"
-                                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none"
+                                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
                     </div>
 
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+
                     <div>
                         <button
                             type="button"
-                            className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                            onClick={signInbutton}
+                            className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            onClick={handleLogin}
                         >
                             Sign in
                         </button>
