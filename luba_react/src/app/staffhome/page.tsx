@@ -1,5 +1,5 @@
-import staffHomePage from "@/components/staffHomePage";
+import StaffHome from "../../components/staffHomePage";
 
 export default function homePage(){
-    return <staffHomePage />
+    return <StaffHome />;
 }

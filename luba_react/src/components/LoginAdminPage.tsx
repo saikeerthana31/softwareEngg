@@ -13,7 +13,7 @@ export default function LoginAdmin() {
     const handleLogin = async () => {
         setError(""); 
         try {
-            const response = await fetch("http://10.12.67.146:5001/api/login", {
+            const response = await fetch("http://10.12.68.24:5001/api/login/admin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -24,15 +24,16 @@ export default function LoginAdmin() {
                 throw new Error(data.message || "Login failed");
             }
 
-            if (data.success && data.admin.role === "admin") {
+            if (data.success && data.user.role === "admin") {
                 localStorage.setItem("isAdminAuthenticated", "true");
-                localStorage.setItem("adminUser", JSON.stringify(data.admin)); // Store full admin object
-                console.log("Admin user stored in localStorage:", data.admin);
+                localStorage.setItem("adminUser", JSON.stringify(data.user)); // Store full admin object
+                console.log("Admin user stored in localStorage:", data.user);
                 router.push("/adminhome");
             } else {
                 setError("Invalid admin credentials.");
             }
         } catch (err) {
+            console.log(err)
             setError("Server error. Please try again.");
         }
     }
