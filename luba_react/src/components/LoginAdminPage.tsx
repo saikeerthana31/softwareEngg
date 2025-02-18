@@ -28,7 +28,7 @@ export default function LoginAdmin() {
                 localStorage.setItem("isAdminAuthenticated", "true");
                 localStorage.setItem("adminUser", JSON.stringify(data.admin)); // Store full admin object
                 console.log("Admin user stored in localStorage:", data.admin);
-                router.push("/adminHome");
+                router.push("/adminhome");
             } else {
                 setError("Invalid admin credentials.");
             }
