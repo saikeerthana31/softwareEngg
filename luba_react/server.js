@@ -12,8 +12,8 @@ const PORT = 5001;
 app.use(express.json());
 app.use(
   cors({
-    origin: "*", // Allows requests from any device
-    methods: "GET,POST",
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
   })
 );
@@ -38,35 +38,25 @@ const handleLogin = async (req, res, role) => {
 
   const { email, password } = req.body;
   if (!email || !password) {
-    console.error("❌ Missing email or password");
     return res.status(400).json({ success: false, message: "Missing email or password" });
   }
 
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1 AND role = $2", [email, role]);
-    console.log("User Query Result:", result.rows);
 
     if (result.rows.length === 0) {
-      console.error("❌ User not found or role mismatch");
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     const user = result.rows[0];
-    if (!user.password) {
-      console.error("❌ User has no password stored");
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
-    }
-
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Password Match:", isMatch);
 
     if (isMatch) {
-      const userInfo = {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      };
-      return res.json({ success: true, message: "Login successful", user: userInfo });
+      return res.json({
+        success: true,
+        message: "Login successful",
+        user: { id: user.id, email: user.email, role: user.role },
+      });
     } else {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -81,6 +71,94 @@ app.post("/api/login/admin", (req, res) => handleLogin(req, res, "admin"));
 
 // Staff Login Endpoint
 app.post("/api/login/staff", (req, res) => handleLogin(req, res, "staff"));
+
+// Add a new lab
+app.post("/api/labs", async (req, res) => {
+  const { name, location, capacity, status, image_url } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ success: false, message: "Lab name is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "INSERT INTO labs (name, location, capacity, status, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, location || null, capacity || null, status || "Available", image_url || null]
+    );
+    res.status(201).json({ success: true, lab: result.rows[0] });
+  } catch (error) {
+    console.error("❌ Error adding lab:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Get all labs
+app.get("/api/labs", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM labs");
+    res.json({ success: true, labs: result.rows });
+  } catch (error) {
+    console.error("❌ Error fetching labs:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Get a specific lab by ID
+app.get("/api/labs/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM labs WHERE id = $1", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Lab not found" });
+    }
+
+    res.json({ success: true, lab: result.rows[0] });
+  } catch (error) {
+    console.error("❌ Error fetching lab:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Update a lab
+app.put("/api/labs/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, location, capacity, status, image_url } = req.body;
+
+  try {
+    const result = await pool.query(
+      "UPDATE labs SET name = $1, location = $2, capacity = $3, status = $4, image_url = $5 WHERE id = $6 RETURNING *",
+      [name, location, capacity, status, image_url, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Lab not found" });
+    }
+
+    res.json({ success: true, lab: result.rows[0] });
+  } catch (error) {
+    console.error("❌ Error updating lab:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Delete a lab
+app.delete("/api/labs/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query("DELETE FROM labs WHERE id = $1 RETURNING *", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Lab not found" });
+    }
+
+    res.json({ success: true, message: "Lab deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting lab:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 // Start server and listen on all network interfaces
 app.listen(PORT, "0.0.0.0", () => {
@@ -100,4 +178,3 @@ function getLocalIp() {
   }
   return "localhost"; // Fallback
 }
-

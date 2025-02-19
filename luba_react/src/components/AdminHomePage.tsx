@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import AdminDashboard from "./AdminDashboard";
+
 
 export default function AdminHome() {
   const [isOpen, setIsOpen] = useState(true);
@@ -81,7 +83,7 @@ export default function AdminHome() {
           <nav className="pl-3 mt-4">
             <ul>
               <li className="mb-2">
-                <Link href="/admin/dashboard" className="flex items-center p-2 rounded hover:bg-gray-700">
+                <Link href="../adminDashboard" className="flex items-center p-2 rounded hover:bg-gray-700">
                   <FiGrid size={20} />
                   <span className={`ml-2 transition-all ${isOpen ? "block" : "hidden"}`}>Dashboard</span>
                 </Link>
@@ -116,7 +118,7 @@ export default function AdminHome() {
         {/* Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Dashboard Card */}
-          <Link href="/admin/dashboard">
+          <Link href="../adminDashboard">
             <div className="w-72 h-72 bg-white bg-opacity-80 shadow-xl rounded-lg flex flex-col items-center justify-center cursor-pointer transition-transform hover:scale-110">
               <FiGrid size={60} className="text-blue-500 mb-4" />
               <h2 className="text-2xl font-semibold">Dashboard</h2>

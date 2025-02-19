@@ -13,7 +13,7 @@ export default function LoginAdmin() {
     const handleLogin = async () => {
         setError(""); 
         try {
-            const response = await fetch("http://10.12.68.24:5001/api/login/admin", {
+            const response = await fetch("http://10.12.71.199:5001/api/login/admin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
