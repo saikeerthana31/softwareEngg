@@ -2,43 +2,61 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { supabase } from "../utils/supabaseClient"; 
 
 export default function LoginAdmin() {
     const router = useRouter();
-
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
     const handleLogin = async () => {
-        setError(""); 
+        setError("");
+
         try {
-            const response = await fetch("http://10.12.71.199:5001/api/login/admin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
+            // Sign in the user
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || "Login failed");
+            if (error) {
+                setError(error.message);
+                return;
             }
 
-            if (data.success && data.user.role === "admin") {
-                localStorage.setItem("isAdminAuthenticated", "true");
-                localStorage.setItem("adminUser", JSON.stringify(data.user)); // Store full admin object
-                console.log("Admin user stored in localStorage:", data.user);
-                router.push("/adminhome");
-            } else {
-                setError("Invalid admin credentials.");
+            // Extract user session details
+            const { user } = data;
+            if (!user) {
+                setError("Authentication failed.");
+                return;
             }
+
+            // Fetch user role from Supabase users table
+            const { data: userData, error: userError } = await supabase
+                .from("users")
+                .select("role")
+                .eq("user_id", user.id) // Ensure the correct field is used
+                .maybeSingle(); // Prevents crashes if no user is found
+
+
+            if (userError || !userData) {
+                setError("Failed to fetch user role.");
+                return;
+            }
+
+            if (userData.role !== "admin") {
+                setError("Access denied. Only admins are allowed.");
+                return;
+            }
+
+            // Store admin authentication state
+            localStorage.setItem("isAdminAuthenticated", "true");
+            localStorage.setItem("adminUser", JSON.stringify({ email, role: userData.role }));
+
+            console.log("Admin authenticated:", userData);
+            router.push("/adminhome");
         } catch (err) {
-            console.log(err)
-            setError("Server error. Please try again.");
+            console.error(err);
+            setError("Login failed. Please try again.");
         }
-    }
-    const signInbutton = () => {
-        router.push("/adminhome"); // Navigates to "/home" without any login checks
     };
 
     return (
@@ -54,7 +72,7 @@ export default function LoginAdmin() {
             </div>
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-900">
                             Email address
@@ -73,11 +91,9 @@ export default function LoginAdmin() {
                     </div>
 
                     <div>
-                        <div className="flex items-center justify-between">
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-900">
-                                Password
-                            </label>
-                        </div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-900">
+                            Password
+                        </label>
                         <div className="mt-2">
                             <input
                                 id="password"
@@ -96,7 +112,6 @@ export default function LoginAdmin() {
                     <div>
                         <button
                             type="button"
-
                             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             onClick={handleLogin}
                         >
