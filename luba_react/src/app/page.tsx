@@ -8,6 +8,9 @@ export default function Home() {
   const handleLoginRedirect = (role: string) => {
     router.push(`/${role}`); // Navigates to "/admin" or "/staff"
   };
+  const handleSignUp = (role: string) => {
+    router.push(`/${role}`); // Navigates to "/admin" or "/staff"
+  };
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-100 relative">
@@ -51,6 +54,15 @@ export default function Home() {
             </button>
           </div>
         </div>
+        <div className="p-4">
+        <button 
+              className=" px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
+              onClick={() => handleSignUp("signUp")}
+            >
+              sign up
+            </button>
+        </div>
+        
       </div>
     </div>
   );
