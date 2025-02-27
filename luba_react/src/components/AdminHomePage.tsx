@@ -89,7 +89,7 @@ export default function AdminHome() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin/staff-management" className="flex items-center p-2 rounded hover:bg-gray-700">
+                <Link href="../staffManagement" className="flex items-center p-2 rounded hover:bg-gray-700">
                   <FiUsers size={20} />
                   <span className={`ml-2 transition-all ${isOpen ? "block" : "hidden"}`}>Staff Management</span>
                 </Link>
@@ -127,7 +127,7 @@ export default function AdminHome() {
           </Link>
 
           {/* Staff Management Card */}
-          <Link href="/admin/staff-management">
+          <Link href="../staffManagement">
             <div className="w-72 h-72 bg-white bg-opacity-80 shadow-xl rounded-lg flex flex-col items-center justify-center cursor-pointer transition-transform hover:scale-110">
               <FiUsers size={60} className="text-green-500 mb-4" />
               <h2 className="text-2xl font-semibold">Staff Management</h2>
