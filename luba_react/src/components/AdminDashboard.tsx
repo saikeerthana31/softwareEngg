@@ -56,6 +56,9 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [utilization, setUtilization] = useState<Utilization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddLabModalOpen, setIsAddLabModalOpen] = useState(false);
+  const [isEditLabModalOpen, setIsEditLabModalOpen] = useState(false);
+  const [editingLab, setEditingLab] = useState<Lab | null>(null);
   const router = useRouter();
 
   const fetchLabs = async () => {
@@ -93,6 +96,103 @@ export default function AdminDashboard() {
     setUtilization(utilizationData || []);
   };
 
+  const handleAddLab = async (newLab: Omit<Lab, 'lab_id'>) => {
+    try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("You must be logged in to add a lab.");
+        return;
+      }
+
+      console.log("Attempting to add lab as user:", user.id);
+      console.log("New lab data:", newLab);
+
+      const { data, error } = await supabase
+        .from("labs")
+        .insert([newLab])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding lab:", error.message, error.details);
+        alert(`Failed to add lab: ${error.message}`);
+        return;
+      }
+
+      console.log("Lab added successfully:", data);
+      setLabs([...labs, data]);
+      setIsAddLabModalOpen(false);
+    } catch (err) {
+      console.error("Unexpected error adding lab:", err);
+      alert("An unexpected error occurred while adding the lab.");
+    }
+  };
+
+  const handleEditLab = async (updatedLab: Lab) => {
+    try {
+      // Log the data being sent to Supabase
+      console.log("Attempting to update lab:", updatedLab);
+  
+      const { data, error } = await supabase
+        .from("labs")
+        .update({
+          lab_name: updatedLab.lab_name,
+          location: updatedLab.location,
+          capacity: updatedLab.capacity,
+          equipment: updatedLab.equipment,
+          description: updatedLab.description,
+        })
+        .eq("lab_id", updatedLab.lab_id)
+        .select()
+        .single();
+  
+      if (error) {
+        console.error("Error updating lab:", error.message, error.details);
+        alert(`Failed to update lab: ${error.message}`);
+        return;
+      }
+  
+      console.log("Lab updated successfully:", data);
+      setLabs(labs.map(lab => lab.lab_id === updatedLab.lab_id ? data : lab));
+      setIsEditLabModalOpen(false);
+      setEditingLab(null);
+    } catch (err) {
+      console.error("Unexpected error updating lab:", err);
+      alert("An unexpected error occurred while updating the lab.");
+    }
+  };
+  const handleDeleteLab = async (labId: string) => {
+    // First check if there are any bookings for this lab
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("lab_bookings")
+      .select("booking_id")
+      .eq("lab_id", labId);
+
+    if (bookingsError) {
+      console.error("Error checking bookings:", bookingsError.message);
+      return;
+    }
+
+    if (bookingsData && bookingsData.length > 0) {
+      alert("Cannot delete lab with existing bookings. Please cancel all bookings first.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("labs")
+      .delete()
+      .eq("lab_id", labId);
+
+    if (error) {
+      console.error("Error deleting lab:", error.message);
+      return;
+    }
+
+    setLabs(labs.filter(lab => lab.lab_id !== labId));
+    setIsEditLabModalOpen(false);
+    setEditingLab(null);
+  };
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -314,26 +414,139 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Labs Overview Section */}
+        {/* Labs Overview Section with Add Button */}
         <div className="relative">
-          <h2 className="text-xl font-bold mb-4">Labs Overview</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Labs Overview</h2>
+            <button
+              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
+              onClick={() => setIsAddLabModalOpen(true)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
           <div className="h-[400px] overflow-y-auto scrollbar-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {labs.map((lab) => (
                 <div
                   key={lab.lab_id}
-                  className="bg-white shadow-lg p-4 rounded cursor-pointer hover:shadow-xl transition"
-                  onClick={() => openLabDetails(lab)}
+                  className="bg-white shadow-lg p-4 rounded cursor-pointer hover:shadow-xl transition relative"
                 >
-                  <h3 className="font-bold text-lg">{lab.lab_name}</h3>
-                  <p className="text-gray-600">{lab.location}</p>
-                  <p className="text-sm text-gray-500">Capacity: {lab.capacity}</p>
-                  <p className="text-sm text-gray-500">{lab.description || "No description"}</p>
+                  <div onClick={() => openLabDetails(lab)}>
+                    <h3 className="font-bold text-lg">{lab.lab_name}</h3>
+                    <p className="text-gray-600">{lab.location}</p>
+                    <p className="text-sm text-gray-500">Capacity: {lab.capacity}</p>
+                    <p className="text-sm text-gray-500">{lab.description || "No description"}</p>
+                  </div>
+                  <button
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      setEditingLab(lab);
+                      setIsEditLabModalOpen(true);
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Add Lab Modal */}
+        {isAddLabModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
+              <h2 className="text-lg font-bold mb-4">Add New Lab</h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  handleAddLab({
+                    lab_name: form.lab_name.value,
+                    location: form.location.value,
+                    capacity: parseInt(form.capacity.value),
+                    equipment: JSON.parse(form.equipment.value || '[]'),
+                    description: form.description.value,
+                  });
+                }}
+              >
+                <input className="w-full p-2 mb-2 border rounded" name="lab_name" placeholder="Lab Name" required />
+                <input className="w-full p-2 mb-2 border rounded" name="location" placeholder="Location" required />
+                <input className="w-full p-2 mb-2 border rounded" name="capacity" type="number" placeholder="Capacity" required />
+                <textarea className="w-full p-2 mb-2 border rounded" name="equipment" placeholder='Equipment (JSON format, e.g. [{"name": "Microscope", "quantity": 5}])' />
+                <textarea className="w-full p-2 mb-2 border rounded" name="description" placeholder="Description" />
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 bg-blue-500 text-white p-2 rounded">Add Lab</button>
+                  <button
+                    type="button"
+                    className="flex-1 bg-gray-500 text-white p-2 rounded"
+                    onClick={() => setIsAddLabModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Lab Modal with Delete */}
+        {isEditLabModalOpen && editingLab && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
+              <h2 className="text-lg font-bold mb-4">Edit Lab</h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  handleEditLab({
+                    ...editingLab,
+                    lab_name: form.lab_name.value,
+                    location: form.location.value,
+                    capacity: parseInt(form.capacity.value),
+                    equipment: JSON.parse(form.equipment.value || '[]'),
+                    description: form.description.value,
+                  });
+                }}
+              >
+                <input className="w-full p-2 mb-2 border rounded" name="lab_name" defaultValue={editingLab.lab_name} required />
+                <input className="w-full p-2 mb-2 border rounded" name="location" defaultValue={editingLab.location} required />
+                <input className="w-full p-2 mb-2 border rounded" name="capacity" type="number" defaultValue={editingLab.capacity} required />
+                <textarea className="w-full p-2 mb-2 border rounded" name="equipment" defaultValue={JSON.stringify(editingLab.equipment)} />
+                <textarea className="w-full p-2 mb-2 border rounded" name="description" defaultValue={editingLab.description} />
+                <div className="flex gap-2 mt-4">
+                  <button type="submit" className="flex-1 bg-blue-500 text-white p-2 rounded">Save Changes</button>
+                  <button
+                    type="button"
+                    className="flex-1 bg-gray-500 text-white p-2 rounded"
+                    onClick={() => {
+                      setIsEditLabModalOpen(false);
+                      setEditingLab(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="w-full mt-2 bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${editingLab.lab_name}?`)) {
+                      handleDeleteLab(editingLab.lab_id);
+                    }
+                  }}
+                >
+                  Delete Lab
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Lab Details Modal */}
         {selectedLab && (
