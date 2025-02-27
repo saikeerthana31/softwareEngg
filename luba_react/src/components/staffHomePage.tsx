@@ -1,36 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
-import { UUID } from "crypto";
-
-// Define the Lab interface
-interface Lab {
-  lab_id: UUID;
-  lab_name: string;
-  location: string;
-  capacity: number; // Changed from num_computers to capacity to match previous schema; adjust if your DB uses num_computers
-  equipment?: { name: string; quantity: number }[]; // Optional, from previous Lab interface
-  description?: string; // Optional, from previous Lab interface
-}
 
 export default function LabBooking() {
   const [searchTerm, setSearchTerm] = useState("");
-<<<<<<< HEAD
-  const [labs, setLabs] = useState<Lab[]>([]); // Apply the Lab interface here
-  const [userId, setUserId] = useState<string | null>(null); // Specify type for clarity
-  const [selectedDate, setSelectedDate] = useState<{ [key: string]: string }>({});
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ [key: string]: string }>({});
-  const [activePage, setActivePage] = useState<"dashboard" | "bookLab" | "myBookings">("dashboard");
-
-  useEffect(() => {
-    fetchLabs();
-    // Uncomment and fix auth setup to get user ID
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
-    };
-    getUser();
-=======
   const [labs, setLabs] = useState([]);
   const [userId, setUserId] = useState(null);
   const [selectedDate, setSelectedDate] = useState({});
@@ -55,21 +28,13 @@ export default function LabBooking() {
   useEffect(() => {
     fetchLabs();
     fetchUser();
->>>>>>> origin/saikeerthana
   }, []);
 
   const fetchLabs = async () => {
     const { data, error } = await supabase.from("labs").select("*");
-    if (error) {
-      console.error("Error fetching labs:", error.message);
-      return;
-    }
-    setLabs(data as Lab[]); // Typecast data to Lab[]
+    if (!error) setLabs(data);
   };
 
-<<<<<<< HEAD
-  const handleBookLab = async (labId: UUID) => {
-=======
   const fetchUser = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (user) {
@@ -81,7 +46,6 @@ export default function LabBooking() {
     const today = new Date();
     const selectedLabDate = new Date(selectedDate[labId]);
 
->>>>>>> origin/saikeerthana
     if (!userId) return alert("User not authenticated!");
     if (!selectedDate[labId] || !selectedTimeSlot[labId]) {
       return alert("Please select both date and time slot.");
@@ -99,17 +63,14 @@ export default function LabBooking() {
         user_id: userId,
         lab_id: labId,
         date: selectedDate[labId],
-        start_time: selectedTimeSlot[labId].split("-")[0].trim(),
-        end_time: selectedTimeSlot[labId].split("-")[1].trim(),
+        start_time: selectedTimeSlot[labId].split("-")[0],
+        end_time: selectedTimeSlot[labId].split("-")[1],
         purpose: "Project Work",
         status: "pending",
       },
     ]);
 
-    if (error) {
-      console.error("Error booking lab:", error.message);
-      alert("Failed to book lab. Please try again.");
-    } else {
+    if (!error) {
       alert("Lab booked successfully!");
     }
   };
@@ -158,9 +119,7 @@ export default function LabBooking() {
               ? "Book a Lab"
               : "Profile Details"}
           </h2>
-          <button className="bg-red-500 px-4 py-2 rounded">
-            Logout {/* Add onClick handler for logout logic */}
-          </button>
+          <button className="bg-red-500 px-4 py-2 rounded">Logout</button>
         </div>
 
         {/* Page Content */}
@@ -231,7 +190,7 @@ export default function LabBooking() {
                     >
                       <h2 className="text-lg font-bold">{lab.lab_name}</h2>
                       <p className="text-gray-600">
-                        {lab.location} | <b>{lab.capacity} Computers</b> {/* Changed num_computers to capacity */}
+                        {lab.location} | <b>{lab.num_computers} Computers</b>
                       </p>
                       <input
                         type="date"
