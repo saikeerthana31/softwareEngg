@@ -18,6 +18,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { UUID } from "crypto";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
   const [isAddLabModalOpen, setIsAddLabModalOpen] = useState(false);
   const [isEditLabModalOpen, setIsEditLabModalOpen] = useState(false);
   const [editingLab, setEditingLab] = useState<Lab | null>(null);
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
   const router = useRouter();
 
   const fetchLabs = async () => {
@@ -72,14 +74,18 @@ export default function AdminDashboard() {
   };
 
   const fetchBookings = async () => {
-    const { data: bookingsData, error: bookingsError } = await supabase.from("lab_bookings").select("*");
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("lab_bookings")
+      .select("*");
+  
     if (bookingsError) {
       console.error("Error fetching bookings:", bookingsError.message);
       return;
     }
+  
     console.log("Bookings fetched:", bookingsData);
     setBookings(bookingsData || []);
-    setPendingRequests(bookingsData || []);
+    setPendingRequests(bookingsData || []); // Optionally filter to only pending requests
   };
 
   const fetchUtilization = async () => {
@@ -96,9 +102,8 @@ export default function AdminDashboard() {
     setUtilization(utilizationData || []);
   };
 
-  const handleAddLab = async (newLab: Omit<Lab, 'lab_id'>) => {
+  const handleAddLab = async (newLab: Omit<Lab, "lab_id">) => {
     try {
-      // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         alert("You must be logged in to add a lab.");
@@ -131,9 +136,8 @@ export default function AdminDashboard() {
 
   const handleEditLab = async (updatedLab: Lab) => {
     try {
-      // Log the data being sent to Supabase
       console.log("Attempting to update lab:", updatedLab);
-  
+
       const { data, error } = await supabase
         .from("labs")
         .update({
@@ -146,15 +150,15 @@ export default function AdminDashboard() {
         .eq("lab_id", updatedLab.lab_id)
         .select()
         .single();
-  
+
       if (error) {
         console.error("Error updating lab:", error.message, error.details);
         alert(`Failed to update lab: ${error.message}`);
         return;
       }
-  
+
       console.log("Lab updated successfully:", data);
-      setLabs(labs.map(lab => lab.lab_id === updatedLab.lab_id ? data : lab));
+      setLabs(labs.map((lab) => (lab.lab_id === updatedLab.lab_id ? data : lab)));
       setIsEditLabModalOpen(false);
       setEditingLab(null);
     } catch (err) {
@@ -162,8 +166,8 @@ export default function AdminDashboard() {
       alert("An unexpected error occurred while updating the lab.");
     }
   };
+
   const handleDeleteLab = async (labId: string) => {
-    // First check if there are any bookings for this lab
     const { data: bookingsData, error: bookingsError } = await supabase
       .from("lab_bookings")
       .select("booking_id")
@@ -189,10 +193,11 @@ export default function AdminDashboard() {
       return;
     }
 
-    setLabs(labs.filter(lab => lab.lab_id !== labId));
+    setLabs(labs.filter((lab) => lab.lab_id !== labId));
     setIsEditLabModalOpen(false);
     setEditingLab(null);
   };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -252,20 +257,81 @@ export default function AdminDashboard() {
   };
 
   const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
-    const { error } = await supabase
-      .from("lab_bookings")
-      .update({ status })
-      .eq("booking_id", bookingId);
-
-    if (error) {
-      console.error("Error updating booking:", error.message);
-      return;
+    try {
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error("Authentication error:", authError?.message || "No user logged in");
+        alert("You must be logged in to update bookings.");
+        return;
+      }
+      console.log("Authenticated user ID:", user.id);
+  
+      // Fetch user role
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+      if (userError || !userData) {
+        console.error("Error fetching user role:", userError?.message);
+        alert("Unable to verify user role.");
+        return;
+      }
+      console.log("User role:", userData.role);
+  
+      // Log booking ID details
+      console.log("Attempting to update booking with ID:", bookingId);
+      console.log("Type of bookingId:", typeof bookingId);
+      console.log("bookingId value:", JSON.stringify(bookingId));
+  
+      // Verify the booking exists and is accessible
+      const { data: existingBooking, error: fetchError } = await supabase
+        .from("lab_bookings")
+        .select("*")
+        .eq("booking_id", bookingId);
+      if (fetchError) {
+        console.error("Error fetching booking:", fetchError.message, fetchError.details);
+      }
+      console.log("Booking visible to user:", existingBooking);
+  
+      // Attempt the update
+      const { data, error } = await supabase
+        .from("lab_bookings")
+        .update({ status })
+        .eq("booking_id", bookingId)
+        .select();
+  
+      if (error) {
+        console.error("Supabase update error:", error.message, error.details, error.hint);
+        alert(`Failed to update booking: ${error.message}`);
+        return;
+      }
+  
+      if (!data || data.length === 0) {
+        console.error("No rows updated for booking_id:", bookingId);
+        alert("No booking found to update. Check RLS permissions or booking ID.");
+        return;
+      }
+  
+      console.log("Booking updated successfully:", data[0]);
+      await fetchBookings();
+      if (selectedLab) {
+        await openLabDetails(selectedLab.lab);
+      }
+    } catch (err) {
+      console.error("Unexpected error in updateBookingStatus:", err);
+      alert("An unexpected error occurred while updating the booking.");
     }
-    if (selectedLab) {
-      openLabDetails(selectedLab.lab);
-    }
-    fetchBookings();
   };
+
+  // Filter labs based on search term
+  const filteredLabs = labs.filter((lab) =>
+    [lab.lab_name, lab.location, lab.description || ""]
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
@@ -276,10 +342,9 @@ export default function AdminDashboard() {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error logging out:", error.message);
-        return; // Optionally, set an error state to display to the user
+        return;
       }
 
-      // Clear localStorage
       localStorage.removeItem("isAdminAuthenticated");
       localStorage.removeItem("adminUser");
 
@@ -287,7 +352,7 @@ export default function AdminDashboard() {
       router.push("/loginAdmin");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
-      router.push("/loginAdmin"); // Redirect even on error to ensure logout
+      router.push("/loginAdmin");
     }
   };
 
@@ -324,9 +389,10 @@ export default function AdminDashboard() {
           </nav>
         </div>
         {isOpen && (
-          <button 
+          <button
             onClick={handleLogout}
-            className="flex items-center justify-center p-3 m-4 bg-red-600 rounded hover:bg-red-700">
+            className="flex items-center justify-center p-3 m-4 bg-red-600 rounded hover:bg-red-700"
+          >
             <FiLogOut size={20} />
             <span className={`ml-2 ${isOpen ? "block" : "hidden"}`}>Logout</span>
           </button>
@@ -336,7 +402,7 @@ export default function AdminDashboard() {
       {/* Main Content - Dynamic Padding */}
       <div
         className={`flex-1 p-6 flex flex-col gap-6 transition-all duration-300 ${
-          isOpen ? "pl-72" : "pl-24" // Adjust padding-left based on sidebar width
+          isOpen ? "pl-72" : "pl-24"
         }`}
       >
         {/* 📊 Lab Utilization Chart */}
@@ -350,13 +416,23 @@ export default function AdminDashboard() {
             )}
           </div>
           <div className="bg-white p-4 shadow-lg rounded">
-            <h3 className="text-lg font-bold mb-2">Booking Trends</h3>
-            {bookings.length > 0 ? (
-              <Line data={bookingChartData} height={150} />
-            ) : (
-              <p className="text-sm text-gray-500">No booking data available.</p>
-            )}
-          </div>
+          <h3 className="text-lg font-bold mb-2">Booking Trends</h3>
+          {bookings.length > 0 ? (
+            <Line
+              data={bookingChartData}
+              height={150}
+              options={{
+                scales: {
+                  y: {
+                    beginAtZero: true, // This ensures the y-axis starts at 0
+                  },
+                },
+              }}
+            />
+          ) : (
+            <p className="text-sm text-gray-500">No booking data available.</p>
+          )}
+        </div>
         </div>
 
         {/* All Requests Table */}
@@ -367,6 +443,7 @@ export default function AdminDashboard() {
               <thead>
                 <tr className="bg-gray-200">
                   <th className="p-2">User</th>
+                  <th className="p-2">Id</th>
                   <th className="p-2">Lab</th>
                   <th className="p-2">Date</th>
                   <th className="p-2">Time</th>
@@ -381,25 +458,26 @@ export default function AdminDashboard() {
                     <tr key={booking.booking_id} className="border-t">
                       <td className="p-2">{booking.user_id}</td>
                       <td className="p-2">{lab?.lab_name || "Unknown"}</td>
+                      <td className="p-2">{booking.booking_id}</td>
                       <td className="p-2">{booking.date}</td>
                       <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
-                      <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-yellow-600"}`}>
+                      <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : booking.status === "rejected" ? "text-red-600" : "text-yellow-600"}`}>
                         {booking.status}
                       </td>
                       <td className="p-2">
                         {booking.status === "pending" && (
                           <>
                             <button
-                              className="bg-green-500 text-white px-2 py-1 rounded mr-1"
+                              className="bg-green-500 text-white px-2 py-1 rounded mr-1 hover:bg-green-600"
                               onClick={() => updateBookingStatus(booking.booking_id, "approved")}
                             >
-                              ✓
+                              ✅
                             </button>
                             <button
-                              className="bg-red-500 text-white px-2 py-1 rounded"
+                              className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                               onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
                             >
-                              ✗
+                              ❌
                             </button>
                           </>
                         )}
@@ -413,13 +491,19 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500">No requests available.</p>
           )}
         </div>
-
-        {/* Labs Overview Section with Add Button */}
+        {/* Labs Overview Section with Search Bar */}
         <div className="relative">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col gap-4 mb-4">
             <h2 className="text-xl font-bold">Labs Overview</h2>
+            <input
+              type="text"
+              placeholder="Search labs by name, location, or description..."
+              className="w-full p-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <button
-              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
+              className="self-end bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
               onClick={() => setIsAddLabModalOpen(true)}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,7 +513,7 @@ export default function AdminDashboard() {
           </div>
           <div className="h-[400px] overflow-y-auto scrollbar-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {labs.map((lab) => (
+              {filteredLabs.map((lab) => (
                 <div
                   key={lab.lab_id}
                   className="bg-white shadow-lg p-4 rounded cursor-pointer hover:shadow-xl transition relative"
@@ -448,7 +532,12 @@ export default function AdminDashboard() {
                     }}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -470,7 +559,7 @@ export default function AdminDashboard() {
                     lab_name: form.lab_name.value,
                     location: form.location.value,
                     capacity: parseInt(form.capacity.value),
-                    equipment: JSON.parse(form.equipment.value || '[]'),
+                    equipment: JSON.parse(form.equipment.value || "[]"),
                     description: form.description.value,
                   });
                 }}
@@ -478,7 +567,11 @@ export default function AdminDashboard() {
                 <input className="w-full p-2 mb-2 border rounded" name="lab_name" placeholder="Lab Name" required />
                 <input className="w-full p-2 mb-2 border rounded" name="location" placeholder="Location" required />
                 <input className="w-full p-2 mb-2 border rounded" name="capacity" type="number" placeholder="Capacity" required />
-                <textarea className="w-full p-2 mb-2 border rounded" name="equipment" placeholder='Equipment (JSON format, e.g. [{"name": "Microscope", "quantity": 5}])' />
+                <textarea
+                  className="w-full p-2 mb-2 border rounded"
+                  name="equipment"
+                  placeholder='Equipment (JSON format, e.g. [{"name": "Microscope", "quantity": 5}])'
+                />
                 <textarea className="w-full p-2 mb-2 border rounded" name="description" placeholder="Description" />
                 <div className="flex gap-2">
                   <button type="submit" className="flex-1 bg-blue-500 text-white p-2 rounded">Add Lab</button>
@@ -509,14 +602,20 @@ export default function AdminDashboard() {
                     lab_name: form.lab_name.value,
                     location: form.location.value,
                     capacity: parseInt(form.capacity.value),
-                    equipment: JSON.parse(form.equipment.value || '[]'),
+                    equipment: JSON.parse(form.equipment.value || "[]"),
                     description: form.description.value,
                   });
                 }}
               >
                 <input className="w-full p-2 mb-2 border rounded" name="lab_name" defaultValue={editingLab.lab_name} required />
                 <input className="w-full p-2 mb-2 border rounded" name="location" defaultValue={editingLab.location} required />
-                <input className="w-full p-2 mb-2 border rounded" name="capacity" type="number" defaultValue={editingLab.capacity} required />
+                <input
+                  className="w-full p-2 mb-2 border rounded"
+                  name="capacity"
+                  type="number"
+                  defaultValue={editingLab.capacity}
+                  required
+                />
                 <textarea className="w-full p-2 mb-2 border rounded" name="equipment" defaultValue={JSON.stringify(editingLab.equipment)} />
                 <textarea className="w-full p-2 mb-2 border rounded" name="description" defaultValue={editingLab.description} />
                 <div className="flex gap-2 mt-4">

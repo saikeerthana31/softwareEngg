@@ -39,7 +39,7 @@ export default function StudentLogin() {
         return;
       }
 
-      if (userData.role !== "admin") {
+      if (userData.role !== "student") {
         setError("Access denied. Only students are allowed.");
         return;
       }

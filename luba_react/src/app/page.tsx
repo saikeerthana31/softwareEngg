@@ -5,17 +5,14 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
 
-  const handleLoginRedirect = (role: string) => {
+  const handleRedirect = (role: string) => {
     router.push(`/${role}`);
   };
-<<<<<<< HEAD
-  const handleSignUp = (role: string) => {
-    router.push(`/${role}`); // Navigates to "/admin" or "/staff"
-  };
-  
-=======
+ 
 
->>>>>>> origin/nitish
+
+  
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-8">
       {/* Background Image */}
@@ -44,10 +41,10 @@ export default function Home() {
             src="/staff.jpg"
             className="h-40 w-40 rounded-lg mb-4 shadow-md"
           />
-          <h2 className="text-2xl font-semibold text-white mb-4">Staff</h2>
+          <h2 className="text-2xl font-semibold text-black mb-4">Staff</h2>
           <button
             className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-700 transition-all w-full"
-            onClick={() => handleLoginRedirect("loginStaff")}
+            onClick={() => handleRedirect("loginStaff")}
           >
             Login as Staff
           </button>
@@ -60,10 +57,10 @@ export default function Home() {
             src="/Admin.jpg"
             className="h-40 w-40 rounded-lg mb-4 shadow-md"
           />
-          <h2 className="text-2xl font-semibold text-white mb-4">Admin</h2>
+          <h2 className="text-2xl font-semibold text-black mb-4">Admin</h2>
           <button
             className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-700 transition-all w-full"
-            onClick={() => handleLoginRedirect("loginAdmin")}
+            onClick={() => handleRedirect("loginAdmin")}
           >
             Login as Admin
           </button>
@@ -76,10 +73,10 @@ export default function Home() {
             src="/student.jpg"
             className="h-40 w-40 rounded-lg mb-4 shadow-md"
           />
-          <h2 className="text-2xl font-semibold text-white mb-4">Students</h2>
+          <h2 className="text-2xl font-semibold text-black mb-4">Students</h2>
           <button
             className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-all w-full"
-            onClick={() => handleLoginRedirect("loginStudent")}
+            onClick={() => handleRedirect("loginStudent")}
           >
             Login as Student
           </button>
@@ -87,9 +84,17 @@ export default function Home() {
         <div className="p-4">
         <button 
               className=" px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
-              onClick={() => handleSignUp("signUp")}
+              onClick={() => handleRedirect("signUp")}
             >
               sign up
+            </button>
+        </div>
+        <div className="p-4">
+        <button 
+              className=" px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
+              onClick={() => handleRedirect("forgotPassword")}
+            >
+              forgot password
             </button>
         </div>
         
