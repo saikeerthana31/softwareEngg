@@ -26,20 +26,27 @@ export default function LabBooking() {
   });
 
   useEffect(() => {
-    fetchLabs();
-    fetchUser();
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/loginStaff"; // Redirect if not authenticated
+      } else {
+        setUserId(user.id);
+        fetchLabs();
+      }
+    };
+
+    checkAuth();
+
+    // Prevent back navigation after logout
+    history.replaceState(null, null, location.href);
   }, []);
 
   const fetchLabs = async () => {
     const { data, error } = await supabase.from("labs").select("*");
     if (!error) setLabs(data);
-  };
-
-  const fetchUser = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (user) {
-      setUserId(user.id);
-    }
   };
 
   const handleBookLab = async (labId) => {
@@ -53,7 +60,8 @@ export default function LabBooking() {
     if (
       selectedLabDate.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0) ||
       (selectedLabDate.setHours(0, 0, 0, 0) === today.setHours(0, 0, 0, 0) &&
-        new Date().getHours() >= parseInt(selectedTimeSlot[labId].split(":")[0]))
+        new Date().getHours() >=
+          parseInt(selectedTimeSlot[labId].split(":")[0]))
     ) {
       return alert("You cannot book a lab for a past date or time.");
     }
@@ -116,17 +124,26 @@ export default function LabBooking() {
             {activePage === "dashboard"
               ? "Dashboard"
               : activePage === "bookLab"
-              ? "Book a Lab"
-              : "Profile Details"}
+                ? "Book a Lab"
+                : "Profile Details"}
           </h2>
-          <button className="bg-red-500 px-4 py-2 rounded">Logout</button>
+          <button
+            className="bg-red-500 px-4 py-2 rounded"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/loginStaff"; // Redirect to login page
+              history.replaceState(null, null, location.href); // Prevent back button navigation
+            }}
+          >
+            Logout
+          </button>
         </div>
 
         {/* Page Content */}
         <div className="p-6">
           {activePage === "dashboard" && <p>Welcome to the dashboard!</p>}
 
-          {/* Profile Details Page (Unchanged) */}
+          {/* Profile Details Page */}
           {activePage === "profileDetails" && (
             <div className="max-w-3xl mx-auto bg-[#f7f7f7] shadow-lg rounded-lg p-6 relative">
               <button
@@ -143,7 +160,9 @@ export default function LabBooking() {
                   className="w-28 h-28 rounded-full border-4 border-gray-300 shadow-md"
                 />
                 <div className="ml-6">
-                  <h2 className="text-2xl font-bold text-gray-800">{userProfile.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {userProfile.name}
+                  </h2>
                   <p className="text-gray-600">{userProfile.email}</p>
                 </div>
               </div>
@@ -158,7 +177,10 @@ export default function LabBooking() {
                   { label: "Date of Birth", key: "dob" },
                   { label: "Phone Number", key: "phone" },
                 ].map((item, index) => (
-                  <div key={index} className="bg-white p-4 rounded-lg shadow-md">
+                  <div
+                    key={index}
+                    className="bg-white p-4 rounded-lg shadow-md"
+                  >
                     <p className="text-gray-700 font-semibold">{item.label}</p>
                     <p className="text-gray-600">{userProfile[item.key]}</p>
                   </div>
@@ -167,7 +189,7 @@ export default function LabBooking() {
             </div>
           )}
 
-          {/* Book a Lab Page (Updated) */}
+          {/* Book a Lab Page */}
           {activePage === "bookLab" && (
             <>
               <input
@@ -181,7 +203,9 @@ export default function LabBooking() {
               <div className="grid grid-cols-2 gap-6">
                 {labs
                   .filter((lab) =>
-                    lab.lab_name.toLowerCase().includes(searchTerm.toLowerCase())
+                    lab.lab_name
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()),
                   )
                   .map((lab) => (
                     <div
@@ -192,32 +216,6 @@ export default function LabBooking() {
                       <p className="text-gray-600">
                         {lab.location} | <b>{lab.num_computers} Computers</b>
                       </p>
-                      <input
-                        type="date"
-                        className="border p-2 w-full mt-2"
-                        value={selectedDate[lab.lab_id] || ""}
-                        min={new Date().toISOString().split("T")[0]} // Prevent past dates
-                        onChange={(e) =>
-                          setSelectedDate({ ...selectedDate, [lab.lab_id]: e.target.value })
-                        }
-                      />
-                      <select
-                        className="border p-2 w-full mt-2"
-                        value={selectedTimeSlot[lab.lab_id] || ""}
-                        onChange={(e) =>
-                          setSelectedTimeSlot({ ...selectedTimeSlot, [lab.lab_id]: e.target.value })
-                        }
-                      >
-                        <option value="">Select Time Slot</option>
-                        <option value="10:45 am - 01:15 pm">10:45 am - 01:15 pm</option>
-                        <option value="02:05 pm - 04:35 pm">02:05 pm - 04:35 pm</option>
-                      </select>
-                      <button
-                        className="px-4 py-2 rounded mt-4 text-white bg-blue-500 hover:bg-blue-600"
-                        onClick={() => handleBookLab(lab.lab_id)}
-                      >
-                        Book
-                      </button>
                     </div>
                   ))}
               </div>

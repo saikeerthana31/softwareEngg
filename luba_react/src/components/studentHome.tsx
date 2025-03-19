@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 import Calendar from "react-calendar";
@@ -227,10 +226,10 @@ export default function StudentBookingDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header with Three Tabs */}
-      <header className="bg-blue-600 text-white py-4 px-6 shadow">
+      {/* Header with Tabs and Logout */}
+      <header className="bg-blue-600 text-white py-4 px-6 shadow flex justify-between items-center">
         <h1 className="text-2xl font-bold">Student Booking Dashboard</h1>
-        <div className="mt-2 space-x-4">
+        <div className="space-x-4">
           <button
             className={`px-4 py-2 rounded ${
               activeTab === "book" ? "bg-blue-800" : "bg-blue-400"
@@ -254,6 +253,16 @@ export default function StudentBookingDashboard() {
             onClick={() => setActiveTab("history")}
           >
             Booking History
+          </button>
+
+          <button
+            className="px-4 py-2 bg-red-500 text-white rounded"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.replace("http://localhost:3000/loginStudent");
+            }}
+          >
+            Logout
           </button>
         </div>
       </header>
