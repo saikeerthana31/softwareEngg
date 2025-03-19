@@ -27,7 +27,7 @@ export default function StudentBookingDashboard() {
   const [activeTab, setActiveTab] = useState("book");
   const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState(""); // e.g., "18:00-19:00"
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [student, setStudent] = useState<any>(null);
@@ -133,7 +133,7 @@ export default function StudentBookingDashboard() {
       lab_id: selectedLab.lab_id,
       from: timeFrom,
       to: timeTo,
-      booking_date: formatDate(selectedDate),
+      booking_date: formatDate(selectedDate || new Date()),
       status: "active",
     };
 
@@ -222,7 +222,7 @@ export default function StudentBookingDashboard() {
   const bookingHistory = bookings; // Includes both active and cancelled.
 
   // Compute available time slots based on the selected date.
-  const availableTimeSlots = getTimeSlots(selectedDate);
+  const availableTimeSlots = getTimeSlots(selectedDate ?? new Date());
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -254,7 +254,6 @@ export default function StudentBookingDashboard() {
           >
             Booking History
           </button>
-
           <button
             className="px-4 py-2 bg-red-500 text-white rounded"
             onClick={async () => {
@@ -321,7 +320,13 @@ export default function StudentBookingDashboard() {
                 <label className="block text-gray-700 font-bold mb-2">
                   Select Date:
                 </label>
-                <Calendar onChange={setSelectedDate} value={selectedDate} />
+                323 |{" "}
+                <Calendar
+                  onChange={(value) =>
+                    setSelectedDate(value instanceof Date ? value : null)
+                  }
+                  value={selectedDate}
+                />
               </div>
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">

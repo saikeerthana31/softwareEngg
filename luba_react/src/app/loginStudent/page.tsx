@@ -1,4 +1,4 @@
-import StudentLogin from "../../components/LoginStudent.tsx";
+import StudentLogin from "../../components/LoginStudent";
 
 export default function homePage() {
   return <StudentLogin />;

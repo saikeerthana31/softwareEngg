@@ -1,0 +1,17 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/adminDashboard/page": "app/adminDashboard/page.js",
+  "/adminhome/page": "app/adminhome/page.js",
+  "/loginAdmin/page": "app/loginAdmin/page.js",
+  "/loginStudent/page": "app/loginStudent/page.js",
+  "/resetPassword/page": "app/resetPassword/page.js",
+  "/forgotPassword/page": "app/forgotPassword/page.js",
+  "/signUp/page": "app/signUp/page.js",
+  "/page": "app/page.js",
+  "/loginStaff/page": "app/loginStaff/page.js",
+  "/staff/page": "app/staff/page.js",
+  "/staffhome/page": "app/staffhome/page.js",
+  "/staffManagement/page": "app/staffManagement/page.js",
+  "/studentHome/page": "app/studentHome/page.js"
+}
