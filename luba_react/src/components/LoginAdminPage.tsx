@@ -31,22 +31,25 @@ export default function LoginAdmin() {
 
             // Fetch user role from Supabase users table
             const { data: userData, error: userError } = await supabase
-                .from("users")
-                .select("role")
-                .eq("user_id", user.id) // Ensure the correct field is used
-                .maybeSingle(); // Prevents crashes if no user is found
-
+            .from("users")
+            .select("role, pending_approval")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
             if (userError || !userData) {
-                setError("Failed to fetch user role.");
-                return;
+            setError("Failed to fetch user role.");
+            return;
+            }
+
+            if (userData.pending_approval) {
+            setError("Your account is pending approval. Please wait for admin approval.");
+            return;
             }
 
             if (userData.role !== "admin") {
-                setError("Access denied. Only admins are allowed.");
-                return;
+            setError("Access denied. Only admins are allowed.");
+            return;
             }
-
             // Store admin authentication state
             localStorage.setItem("isAdminAuthenticated", "true");
             localStorage.setItem("adminUser", JSON.stringify({ email, role: userData.role }));
@@ -58,6 +61,8 @@ export default function LoginAdmin() {
             setError("Login failed. Please try again.");
         }
     };
+
+    
 
     return (
         <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">

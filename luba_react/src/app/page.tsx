@@ -5,52 +5,99 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
 
-  const handleLoginRedirect = (role: string) => {
-    router.push(`/${role}`); // Navigates to "/admin" or "/staff"
+  const handleRedirect = (role: string) => {
+    router.push(`/${role}`);
   };
+ 
+
+
   
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-100 relative">
+    <div className="relative flex flex-col items-center justify-center min-h-screen p-8">
       {/* Background Image */}
       <img
         src="/bg.png"
         alt="Background"
         className="absolute inset-0 w-full h-full object-cover z-0"
       />
-      
-      {/* Top bar */}
-      <div className="w-full bg-gray-200 py-4 px-6 fixed top-0 left-0 text-black font-bold text-lg shadow-md z-10">
-        Lab Utilization and Booking Application
-      </div>
-      
-      <div className="relative bg-white shadow-lg rounded-lg p-8 w-full max-w-4xl h-[90vh] flex flex-col items-center justify-center mt-16 z-10">
-        <h1 className="text-3xl font-bold mb-6 text-center">Welcome</h1>
-        <div className="mt-6 flex w-full items-center">
-          {/* Left Section - Staff */}
-          <div className="flex-1 flex flex-col items-center">
-            <img alt="Staff Login" src="/staff.jpg" className="h-60 w-60 mb-6" />
-           
-            <button 
-              className="px-8 py-4 bg-purple-400 text-white rounded-md hover:bg-purple-600 w-full text-lg" 
-              onClick={() => handleLoginRedirect("loginStaff")}
-            >
-              Staff
-            </button>
-          </div>
-          {/* Divider */}
-          <div className="w-px bg-gray-300 h-40 mx-8"></div>
-          {/* Right Section - Admin */}
-          <div className="flex-1 flex flex-col items-center">
-            <img alt="Admin Login" src="/Admin.jpg" className="h-60 w-60 mb-6" />
-            
-            <button 
-              className="px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
-              onClick={() => handleLoginRedirect("loginAdmin")}
-            >
-              Admin
-            </button>
-          </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 w-full bg-white bg-opacity-30 backdrop-blur-md text-gray-900 py-4 px-6 text-center font-bold text-lg shadow-md z-20">
+        Lab Utilization and Booking Application (LUBA)
+      </header>
+
+      {/* Title */}
+      <h1 className="text-4xl font-extrabold text-white drop-shadow-lg mb-10 mt-16 text-center z-10">
+        Welcome
+      </h1>
+
+      {/* Cards Container */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl z-10">
+        {/* Staff Card */}
+        <div className="flex flex-col items-center p-6 bg-white bg-opacity-30 backdrop-blur-lg rounded-xl shadow-lg">
+          <img
+            alt="Staff Login"
+            src="/staff.jpg"
+            className="h-40 w-40 rounded-lg mb-4 shadow-md"
+          />
+          <h2 className="text-2xl font-semibold text-black mb-4">Staff</h2>
+          <button
+            className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-700 transition-all w-full"
+            onClick={() => handleRedirect("loginStaff")}
+          >
+            Login as Staff
+          </button>
         </div>
+
+        {/* Admin Card */}
+        <div className="flex flex-col items-center p-6 bg-white bg-opacity-30 backdrop-blur-lg rounded-xl shadow-lg">
+          <img
+            alt="Admin Login"
+            src="/Admin.jpg"
+            className="h-40 w-40 rounded-lg mb-4 shadow-md"
+          />
+          <h2 className="text-2xl font-semibold text-black mb-4">Admin</h2>
+          <button
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-700 transition-all w-full"
+            onClick={() => handleRedirect("loginAdmin")}
+          >
+            Login as Admin
+          </button>
+        </div>
+
+        {/* Students Card */}
+        <div className="flex flex-col items-center p-6 bg-white bg-opacity-30 backdrop-blur-lg rounded-xl shadow-lg">
+          <img
+            alt="Student Login"
+            src="/student.jpg"
+            className="h-40 w-40 rounded-lg mb-4 shadow-md"
+          />
+          <h2 className="text-2xl font-semibold text-black mb-4">Students</h2>
+          <button
+            className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-all w-full"
+            onClick={() => handleRedirect("loginStudent")}
+          >
+            Login as Student
+          </button>
+        </div>
+        <div className="p-4">
+        <button 
+              className=" px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
+              onClick={() => handleRedirect("signUp")}
+            >
+              sign up
+            </button>
+        </div>
+        <div className="p-4">
+        <button 
+              className=" px-8 py-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 w-full text-lg" 
+              onClick={() => handleRedirect("forgotPassword")}
+            >
+              forgot password
+            </button>
+        </div>
+        
       </div>
     </div>
   );
