@@ -365,14 +365,11 @@ export default function LabBooking() {
                         }
                       >
                         <option value="">Select Time Slot</option>
-                        <option value=" 08 : 00 am - 10 : 35 pm ">
-                        08 : 00 am - 10 : 35 pm 
+                        <option value="10:45 AM - 01:15 PM">
+                          10:45 AM - 01:15 PM
                         </option>
-                        <option value=" 10 : 45 am - 01 : 15 pm ">
-                        10 : 45 am - 01 : 15 pm 
-                        </option>
-                        <option value=" 02 : 05 pm - 04 : 35 pm ">
-                        02 : 05 pm - 04 : 35 pm
+                        <option value="02:05 PM - 04:35 PM">
+                          02:05 PM - 04:35 PM
                         </option>
                       </select>
                       <textarea
@@ -405,7 +402,7 @@ export default function LabBooking() {
                       Booking Confirmed!
                     </h2>
                     <p className="mb-4">
-                      {popupMessage} has been successfully booked for{" "}
+                      {popupMessage} has been successfully booked.
                     </p>
                     <button
                       className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
