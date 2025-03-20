@@ -13,6 +13,10 @@ export default function LabBooking() {
   const [activePage, setActivePage] = useState("dashboard");
   const [upcomingLabs, setUpcomingLabs] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [bookingPurpose, setBookingPurpose] = useState<Record<string, string>>({});
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [bookedLabId, setBookedLabId] = useState(null);
 
   const [userProfile, setUserProfile] = useState({
     name: "John Doe",
@@ -56,10 +60,13 @@ export default function LabBooking() {
   };
 
   const fetchUser = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (user) {
       setUserId(user.id);
-      console.log("Logged-in user ID:", user.id); // Debug user ID
+      console.log("Logged-in user ID:", user.id);
     } else {
       console.error("Error fetching user:", error?.message);
     }
@@ -76,8 +83,8 @@ export default function LabBooking() {
       .select(
         "booking_id, lab_id, date, start_time, end_time, status, purpose, labs(lab_name, location)"
       )
-      .eq("user_id", userId) // Filter by logged-in user
-      .gte("date", new Date().toISOString().split("T")[0]) // Only future or current bookings
+      .eq("user_id", userId)
+      .gte("date", new Date().toISOString().split("T")[0])
       .order("date", { ascending: true });
 
     if (error) {
@@ -85,25 +92,28 @@ export default function LabBooking() {
       return;
     }
 
-    console.log("Fetched upcoming labs for user:", userId, data); // Debug fetched data
+    console.log("Fetched upcoming labs for user:", userId, data);
     setUpcomingLabs(data || []);
   };
 
-  const handleBookLab = async (
-    labId: string,
-    date: string = selectedDate[labId],
-    timeSlot: string = selectedTimeSlot[labId],
-    purpose: string = "Lab Session"
-  ) => {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const handleBookLab = async (labId: string, labName: string) => {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (!user || authError) {
       console.error("User not authenticated:", authError?.message);
       return;
     }
 
-    if (!date || !timeSlot) {
-      console.error("Date or time slot not selected.");
+    const date = selectedDate[labId];
+    const timeSlot = selectedTimeSlot[labId];
+    const purpose = bookingPurpose[labId];
+
+    // Validation for required fields
+    if (!date || !timeSlot || !purpose) {
+      alert("Please fill in date, time slot, and purpose before booking.");
       return;
     }
 
@@ -127,7 +137,16 @@ export default function LabBooking() {
     }
 
     console.log("Booking successful:", data);
-    fetchUpcomingLabs(); // Refresh upcoming bookings
+    setPopupMessage(labName);
+    setBookedLabId(labId);
+    setShowPopup(true);
+
+    // Reset selections after successful booking
+    setSelectedDate((prev) => ({ ...prev, [labId]: "" }));
+    setSelectedTimeSlot((prev) => ({ ...prev, [labId]: "" }));
+    setBookingPurpose((prev) => ({ ...prev, [labId]: "" }));
+
+    fetchUpcomingLabs();
   };
 
   const handleProfileChange = (key, value) => {
@@ -143,14 +162,16 @@ export default function LabBooking() {
           {["dashboard", "bookLab", "profileDetails"].map((page) => (
             <li
               key={page}
-              className={`p-2 rounded cursor-pointer ${activePage === page ? "bg-gray-700" : ""}`}
+              className={`p-2 rounded cursor-pointer ${
+                activePage === page ? "bg-gray-700" : ""
+              }`}
               onClick={() => setActivePage(page)}
             >
               {page === "dashboard"
                 ? "Dashboard"
                 : page === "bookLab"
-                  ? "Book a Lab"
-                  : "Profile Details"}
+                ? "Book a Lab"
+                : "Profile Details"}
             </li>
           ))}
         </ul>
@@ -178,7 +199,9 @@ export default function LabBooking() {
         <div className="p-6 overflow-auto">
           {activePage === "dashboard" && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">Your Upcoming Lab Bookings</h2>
+              <h2 className="text-2xl font-bold mb-4">
+                Your Upcoming Lab Bookings
+              </h2>
               {upcomingLabs.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {upcomingLabs.map((booking) => (
@@ -186,13 +209,19 @@ export default function LabBooking() {
                       key={booking.booking_id}
                       className="p-4 bg-white rounded-lg shadow-md border flex flex-col"
                     >
-                      <h3 className="text-lg font-semibold text-gray-800">{booking.labs.lab_name}</h3>
-                      <p className="text-gray-600">Location: {booking.labs.location}</p>
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {booking.labs.lab_name}
+                      </h3>
+                      <p className="text-gray-600">
+                        Location: {booking.labs.location}
+                      </p>
                       <p className="text-gray-600">Date: {booking.date}</p>
                       <p className="text-gray-600">
                         Time: {booking.start_time} - {booking.end_time}
                       </p>
-                      <p className="text-gray-600">Purpose: {booking.purpose}</p>
+                      <p className="text-gray-600">
+                        Purpose: {booking.purpose}
+                      </p>
                       <p
                         className={`mt-2 font-medium ${
                           booking.status === "approved"
@@ -202,13 +231,17 @@ export default function LabBooking() {
                             : "text-yellow-600"
                         }`}
                       >
-                        Status: {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        Status:{" "}
+                        {booking.status.charAt(0).toUpperCase() +
+                          booking.status.slice(1)}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No upcoming lab bookings for you.</p>
+                <p className="text-gray-500">
+                  No upcoming lab bookings for you.
+                </p>
               )}
             </div>
           )}
@@ -234,11 +267,15 @@ export default function LabBooking() {
                     <input
                       type="text"
                       value={userProfile.name}
-                      onChange={(e) => handleProfileChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleProfileChange("name", e.target.value)
+                      }
                       className="text-2xl font-bold text-gray-800 border p-2 rounded w-full"
                     />
                   ) : (
-                    <h2 className="text-2xl font-bold text-gray-800">{userProfile.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      {userProfile.name}
+                    </h2>
                   )}
                   <p className="text-gray-600">{userProfile.email}</p>
                 </div>
@@ -254,13 +291,18 @@ export default function LabBooking() {
                   { label: "Date of Birth", key: "dob" },
                   { label: "Phone Number", key: "phone" },
                 ].map((item) => (
-                  <div key={item.key} className="bg-white p-4 rounded-lg shadow-md">
+                  <div
+                    key={item.key}
+                    className="bg-white p-4 rounded-lg shadow-md"
+                  >
                     <p className="text-gray-700 font-semibold">{item.label}</p>
                     {isEditing ? (
                       <input
                         type="text"
                         value={userProfile[item.key]}
-                        onChange={(e) => handleProfileChange(item.key, e.target.value)}
+                        onChange={(e) =>
+                          handleProfileChange(item.key, e.target.value)
+                        }
                         className="text-gray-600 border p-2 rounded w-full"
                       />
                     ) : (
@@ -285,7 +327,11 @@ export default function LabBooking() {
 
               <div className="grid grid-cols-2 gap-6">
                 {labs
-                  .filter((lab) => lab.lab_name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .filter((lab) =>
+                    lab.lab_name
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                  )
                   .map((lab) => (
                     <div
                       key={lab.lab_id}
@@ -293,7 +339,8 @@ export default function LabBooking() {
                     >
                       <h2 className="text-lg font-bold">{lab.lab_name}</h2>
                       <p className="text-gray-600">
-                        {lab.location} | <b>{lab.num_computers || "N/A"} Computers</b>
+                        {lab.location} |{" "}
+                        <b>{lab.num_computers || "N/A"} Computers</b>
                       </p>
                       <input
                         type="date"
@@ -301,29 +348,74 @@ export default function LabBooking() {
                         value={selectedDate[lab.lab_id] || ""}
                         min={new Date().toISOString().split("T")[0]}
                         onChange={(e) =>
-                          setSelectedDate({ ...selectedDate, [lab.lab_id]: e.target.value })
+                          setSelectedDate({
+                            ...selectedDate,
+                            [lab.lab_id]: e.target.value,
+                          })
                         }
                       />
                       <select
                         className="border p-2 w-full mt-2"
                         value={selectedTimeSlot[lab.lab_id] || ""}
                         onChange={(e) =>
-                          setSelectedTimeSlot({ ...selectedTimeSlot, [lab.lab_id]: e.target.value })
+                          setSelectedTimeSlot({
+                            ...selectedTimeSlot,
+                            [lab.lab_id]: e.target.value,
+                          })
                         }
                       >
                         <option value="">Select Time Slot</option>
-                        <option value="10:45 am - 01:15 pm">10:45 am - 01:15 pm</option>
-                        <option value="02:05 pm - 04:35 pm">02:05 pm - 04:35 pm</option>
+                        <option value=" 08 : 00 am - 10 : 35 pm ">
+                        08 : 00 am - 10 : 35 pm 
+                        </option>
+                        <option value=" 10 : 45 am - 01 : 15 pm ">
+                        10 : 45 am - 01 : 15 pm 
+                        </option>
+                        <option value=" 02 : 05 pm - 04 : 35 pm ">
+                        02 : 05 pm - 04 : 35 pm
+                        </option>
                       </select>
+                      <textarea
+                        className="border p-2 w-full mt-2"
+                        placeholder="Enter purpose of booking..."
+                        rows="3"
+                        value={bookingPurpose[lab.lab_id] || ""}
+                        onChange={(e) =>
+                          setBookingPurpose({
+                            ...bookingPurpose,
+                            [lab.lab_id]: e.target.value,
+                          })
+                        }
+                      />
                       <button
                         className="px-4 py-2 rounded mt-4 text-white bg-blue-500 hover:bg-blue-600"
-                        onClick={() => handleBookLab(lab.lab_id)}
+                        onClick={() => handleBookLab(lab.lab_id, lab.lab_name)}
                       >
                         Book
                       </button>
                     </div>
                   ))}
               </div>
+
+              {/* Popup Confirmation */}
+              {showPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white p-6 rounded-lg shadow-xl">
+                    <h2 className="text-xl font-bold mb-4">
+                      Booking Confirmed!
+                    </h2>
+                    <p className="mb-4">
+                      {popupMessage} has been successfully booked for{" "}
+                    </p>
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      onClick={() => setShowPopup(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -331,4 +423,3 @@ export default function LabBooking() {
     </div>
   );
 }
-
