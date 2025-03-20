@@ -9,6 +9,7 @@ export default function LabBooking() {
   const [selectedDate, setSelectedDate] = useState({});
   const [selectedTimeSlot, setSelectedTimeSlot] = useState({});
   const [activePage, setActivePage] = useState("dashboard");
+  const [upcomingLabs, setUpcomingLabs] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
   // User Profile Data (Editable)
@@ -22,7 +23,7 @@ export default function LabBooking() {
     campus: "Coimbatore",
     dob: "2002-05-15",
     phone: "+91 9876543210",
-    profilePic: "/profile_staff.png",
+    profilePic: "/profile_staff.jpeg",
   });
 
   useEffect(() => {
@@ -30,49 +31,76 @@ export default function LabBooking() {
     fetchUser();
   }, []);
 
+  useEffect(() => {
+    if (userId) {
+      fetchUpcomingLabs();
+    }
+  }, [userId]); // Runs only when userId is set
+
   const fetchLabs = async () => {
     const { data, error } = await supabase.from("labs").select("*");
     if (!error) setLabs(data);
   };
 
   const fetchUser = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (user) {
       setUserId(user.id);
     }
   };
 
-  const handleBookLab = async (labId) => {
-    const today = new Date();
-    const selectedLabDate = new Date(selectedDate[labId]);
+  const fetchUpcomingLabs = async () => {
+    const { data, error } = await supabase
+      .from("lab_bookings")
+      .select(
+        "booking_id, lab_id, date, start_time, end_time, status, labs(lab_name, location)"
+      )
+      .order("date", { ascending: true });
 
-    if (!userId) return alert("User not authenticated!");
-    if (!selectedDate[labId] || !selectedTimeSlot[labId]) {
-      return alert("Please select both date and time slot.");
-    }
-    if (
-      selectedLabDate.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0) ||
-      (selectedLabDate.setHours(0, 0, 0, 0) === today.setHours(0, 0, 0, 0) &&
-        new Date().getHours() >= parseInt(selectedTimeSlot[labId].split(":")[0]))
-    ) {
-      return alert("You cannot book a lab for a past date or time.");
+    if (error) {
+      console.error("Error fetching upcoming labs:", error.message || error);
+      return;
     }
 
-    const { error } = await supabase.from("lab_bookings").insert([
+    setUpcomingLabs(data);
+  };
+
+  const handleBookLab = async (
+    labId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+    purpose: string
+  ) => {
+    const user = supabase.auth.getUser();
+
+    if (!user) {
+      console.error("User not authenticated.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("lab_bookings").insert([
       {
-        user_id: userId,
+        user_id: user.id,
         lab_id: labId,
-        date: selectedDate[labId],
-        start_time: selectedTimeSlot[labId].split("-")[0],
-        end_time: selectedTimeSlot[labId].split("-")[1],
-        purpose: "Project Work",
+        date: date,
+        start_time: startTime,
+        end_time: endTime,
+        purpose: purpose,
         status: "pending",
       },
     ]);
 
-    if (!error) {
-      alert("Lab booked successfully!");
+    if (error) {
+      console.error("Booking failed:", error.message || error);
+      return;
     }
+
+    console.log("Booking successful:", data);
+    fetchUpcomingLabs(); // Refresh upcoming bookings
   };
 
   return (
@@ -124,9 +152,35 @@ export default function LabBooking() {
 
         {/* Page Content */}
         <div className="p-6">
-          {activePage === "dashboard" && <p>Welcome to the dashboard!</p>}
+          {activePage === "dashboard" && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Upcoming Labs</h2>
+              <div>
+                {upcomingLabs.length > 0 ? ( // Added line
+                  upcomingLabs.map(
+                    (
+                      lab,
+                      index // Added line
+                    ) => (
+                      <div
+                        key={index}
+                        className="p-2 bg-gray-100 rounded-lg mb-2"
+                      >
+                        <p className="font-semibold">{lab.lab_name}</p>
+                        <p>
+                          {lab.date} | {lab.time_slot}
+                        </p>
+                      </div>
+                    )
+                  )
+                ) : (
+                  <p>No upcoming labs.</p>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* Profile Details Page (Unchanged) */}
+          {/* Profile Details Page (Editable) */}
           {activePage === "profileDetails" && (
             <div className="max-w-3xl mx-auto bg-[#f7f7f7] shadow-lg rounded-lg p-6 relative">
               <button
@@ -143,7 +197,20 @@ export default function LabBooking() {
                   className="w-28 h-28 rounded-full border-4 border-gray-300 shadow-md"
                 />
                 <div className="ml-6">
-                  <h2 className="text-2xl font-bold text-gray-800">{userProfile.name}</h2>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={userProfile.name}
+                      onChange={(e) =>
+                        handleProfileChange("name", e.target.value)
+                      }
+                      className="text-2xl font-bold text-gray-800 border p-2 rounded w-full"
+                    />
+                  ) : (
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      {userProfile.name}
+                    </h2>
+                  )}
                   <p className="text-gray-600">{userProfile.email}</p>
                 </div>
               </div>
@@ -158,16 +225,30 @@ export default function LabBooking() {
                   { label: "Date of Birth", key: "dob" },
                   { label: "Phone Number", key: "phone" },
                 ].map((item, index) => (
-                  <div key={index} className="bg-white p-4 rounded-lg shadow-md">
+                  <div
+                    key={index}
+                    className="bg-white p-4 rounded-lg shadow-md"
+                  >
                     <p className="text-gray-700 font-semibold">{item.label}</p>
-                    <p className="text-gray-600">{userProfile[item.key]}</p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={userProfile[item.key]}
+                        onChange={(e) =>
+                          handleProfileChange(item.key, e.target.value)
+                        }
+                        className="text-gray-600 border p-2 rounded w-full"
+                      />
+                    ) : (
+                      <p className="text-gray-600">{userProfile[item.key]}</p>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Book a Lab Page (Updated) */}
+          {/* Book a Lab Page (Unchanged) */}
           {activePage === "bookLab" && (
             <>
               <input
@@ -181,7 +262,9 @@ export default function LabBooking() {
               <div className="grid grid-cols-2 gap-6">
                 {labs
                   .filter((lab) =>
-                    lab.lab_name.toLowerCase().includes(searchTerm.toLowerCase())
+                    lab.lab_name
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
                   )
                   .map((lab) => (
                     <div
@@ -198,19 +281,29 @@ export default function LabBooking() {
                         value={selectedDate[lab.lab_id] || ""}
                         min={new Date().toISOString().split("T")[0]} // Prevent past dates
                         onChange={(e) =>
-                          setSelectedDate({ ...selectedDate, [lab.lab_id]: e.target.value })
+                          setSelectedDate({
+                            ...selectedDate,
+                            [lab.lab_id]: e.target.value,
+                          })
                         }
                       />
                       <select
                         className="border p-2 w-full mt-2"
                         value={selectedTimeSlot[lab.lab_id] || ""}
                         onChange={(e) =>
-                          setSelectedTimeSlot({ ...selectedTimeSlot, [lab.lab_id]: e.target.value })
+                          setSelectedTimeSlot({
+                            ...selectedTimeSlot,
+                            [lab.lab_id]: e.target.value,
+                          })
                         }
                       >
                         <option value="">Select Time Slot</option>
-                        <option value="10:45 am - 01:15 pm">10:45 am - 01:15 pm</option>
-                        <option value="02:05 pm - 04:35 pm">02:05 pm - 04:35 pm</option>
+                        <option value="10:45 am - 01:15 pm">
+                          10:45 am - 01:15 pm
+                        </option>
+                        <option value="02:05 pm - 04:35 pm">
+                          02:05 pm - 04:35 pm
+                        </option>
                       </select>
                       <button
                         className="px-4 py-2 rounded mt-4 text-white bg-blue-500 hover:bg-blue-600"

@@ -16,7 +16,9 @@ interface User {
 
 export default function StaffManagement() {
   const [isOpen, setIsOpen] = useState(true);
-  const [admin, setAdmin] = useState<{ email: string; role: string } | null>(null);
+  const [admin, setAdmin] = useState<{ email: string; role: string } | null>(
+    null
+  );
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const router = useRouter();
@@ -76,7 +78,9 @@ export default function StaffManagement() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
+        userId
+      );
       if (authError) throw authError;
       const { error: dbError } = await supabaseAdmin // Use service role client
         .from("users")
@@ -111,24 +115,46 @@ export default function StaffManagement() {
       >
         <div>
           <div className="p-4 flex items-center justify-between">
-            <h2 className={`text-xl font-bold ${isOpen ? "block" : "hidden"}`}>Admin Panel</h2>
+            <h2 className={`text-xl font-bold ${isOpen ? "block" : "hidden"}`}>
+              Admin Panel
+            </h2>
             <button onClick={() => setIsOpen(!isOpen)} className="text-black">
               {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
           </div>
-          {isOpen && <div className="p-4 text-xs text-gray-400">{admin?.email}</div>}
+          {isOpen && (
+            <div className="p-4 text-xs text-gray-400">{admin?.email}</div>
+          )}
           <nav className="pl-3 mt-4">
             <ul>
               <li className="mb-2">
-                <Link href="../adminDashboard" className="flex items-center p-2 rounded hover:bg-gray-700">
+                <Link
+                  href="../adminDashboard"
+                  className="flex items-center p-2 rounded hover:bg-gray-700"
+                >
                   <FiGrid size={20} />
-                  <span className={`ml-2 transition-all ${isOpen ? "block" : "hidden"}`}>Dashboard</span>
+                  <span
+                    className={`ml-2 transition-all ${
+                      isOpen ? "block" : "hidden"
+                    }`}
+                  >
+                    Dashboard
+                  </span>
                 </Link>
               </li>
               <li>
-                <Link href="../staffManagement" className="flex items-center p-2 rounded hover:bg-gray-700">
+                <Link
+                  href="../staffManagement"
+                  className="flex items-center p-2 rounded hover:bg-gray-700"
+                >
                   <FiUsers size={20} />
-                  <span className={`ml-2 transition-all ${isOpen ? "block" : "hidden"}`}>Staff Management</span>
+                  <span
+                    className={`ml-2 transition-all ${
+                      isOpen ? "block" : "hidden"
+                    }`}
+                  >
+                    Staff Management
+                  </span>
                 </Link>
               </li>
             </ul>
@@ -140,7 +166,9 @@ export default function StaffManagement() {
             className="flex items-center justify-center p-3 m-4 bg-red-600 rounded hover:bg-red-700"
           >
             <FiLogOut size={20} />
-            <span className={`ml-2 ${isOpen ? "block" : "hidden"}`}>Logout</span>
+            <span className={`ml-2 ${isOpen ? "block" : "hidden"}`}>
+              Logout
+            </span>
           </button>
         )}
       </aside>
