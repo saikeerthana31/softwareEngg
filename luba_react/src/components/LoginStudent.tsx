@@ -10,12 +10,28 @@ export default function StudentLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // Validate email format
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Sanitize input to remove potentially harmful characters
+  const sanitizeInput = (input: string) => input.replace(/['";-]/g, "");
+
   const handleLogin = async () => {
     setError("");
+
+    // Sanitize and trim email and password
+    const cleanEmail = sanitizeInput(email.trim());
+    const cleanPassword = sanitizeInput(password);
+
+    if (!validateEmail(cleanEmail)) {
+      setError("Invalid email format.");
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
       if (error) {
         setError(error.message);
@@ -47,7 +63,7 @@ export default function StudentLogin() {
       localStorage.setItem("isStudentAuthenticated", "true");
       localStorage.setItem(
         "studentUser",
-        JSON.stringify({ email, role: userData.role }),
+        JSON.stringify({ email: cleanEmail, role: userData.role }),
       );
 
       console.log("Student authenticated:", userData);

@@ -36,7 +36,7 @@ export default function ResetPassword() {
       }
 
       setMessage("Password updated successfully! Redirecting to login...");
-      setTimeout(() => router.push("app/page.tsx"), 2000);
+      setTimeout(() => router.push("/"), 2000);
     } catch (err) {
       console.error(err);
       setError("Failed to update password. Please try again.");

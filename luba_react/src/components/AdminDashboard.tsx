@@ -62,6 +62,25 @@ export default function AdminDashboard() {
   const [editingLab, setEditingLab] = useState<Lab | null>(null);
   const [searchTerm, setSearchTerm] = useState(""); // New state for search term
   const router = useRouter();
+  const [pendingSearchTerm, setPendingSearchTerm] = useState(""); // Search term for pending requests
+  const [approvedRejectedSearchTerm, setApprovedRejectedSearchTerm] = useState(""); // Search term for approved/rejected requests
+  const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "rejected" | "pending">("all"); // Filter for approved/rejected section
+
+  // Update fetchBookings to correctly split pending and approved/rejected requests
+  const fetchBookings = async () => {
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("lab_bookings")
+      .select("*");
+
+    if (bookingsError) {
+      console.error("Error fetching bookings:", bookingsError.message);
+      return;
+    }
+
+    console.log("Bookings fetched:", bookingsData);
+    setBookings(bookingsData || []);
+    setPendingRequests((bookingsData || []).filter((booking) => booking.status === "pending"));
+  };
 
   const fetchLabs = async () => {
     const { data: labsData, error: labsError } = await supabase.from("labs").select("*");
@@ -72,21 +91,26 @@ export default function AdminDashboard() {
     console.log("Labs fetched:", labsData);
     setLabs(labsData || []);
   };
-
-  const fetchBookings = async () => {
-    const { data: bookingsData, error: bookingsError } = await supabase
-      .from("lab_bookings")
-      .select("*");
+  const filterPendingRequests = (requests: Booking[]) =>
+    requests.filter((booking) =>
+      [booking.user_id, labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown", booking.date]
+        .join(" ")
+        .toLowerCase()
+        .includes(pendingSearchTerm.toLowerCase())
+    );
   
-    if (bookingsError) {
-      console.error("Error fetching bookings:", bookingsError.message);
-      return;
-    }
-  
-    console.log("Bookings fetched:", bookingsData);
-    setBookings(bookingsData || []);
-    setPendingRequests(bookingsData || []); // Optionally filter to only pending requests
-  };
+  const filterApprovedRejectedRequests = (requests: Booking[]) =>
+    requests.filter((booking) => {
+      const matchesSearch = [booking.user_id, labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown", booking.date]
+        .join(" ")
+        .toLowerCase()
+        .includes(approvedRejectedSearchTerm.toLowerCase());
+      const matchesFilter =
+        statusFilter === "all" ||
+        booking.status === statusFilter ||
+        (statusFilter === "pending" && booking.status === "pending");
+      return matchesSearch && matchesFilter;
+    });
 
   const fetchUtilization = async () => {
     const { data: utilizationData, error: utilizationError } = await supabase.from("lab_utilization").select("*");
@@ -434,39 +458,45 @@ export default function AdminDashboard() {
           )}
         </div>
         </div>
-
-        {/* All Requests Table */}
+        
+        {/* Booking requests */}
         <div className="bg-white p-4 shadow-lg rounded mb-6">
-          <h3 className="text-lg font-bold mb-2">All Requests</h3>
-          {pendingRequests.length > 0 ? (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2">User</th>
-                  <th className="p-2">Id</th>
-                  <th className="p-2">Lab</th>
-                  <th className="p-2">Date</th>
-                  <th className="p-2">Time</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingRequests.map((booking) => {
-                  const lab = labs.find((l) => l.lab_id === booking.lab_id);
-                  return (
-                    <tr key={booking.booking_id} className="border-t">
-                      <td className="p-2">{booking.user_id}</td>
-                      <td className="p-2">{lab?.lab_name || "Unknown"}</td>
-                      <td className="p-2">{booking.booking_id}</td>
-                      <td className="p-2">{booking.date}</td>
-                      <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
-                      <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : booking.status === "rejected" ? "text-red-600" : "text-yellow-600"}`}>
-                        {booking.status}
-                      </td>
-                      <td className="p-2">
-                        {booking.status === "pending" && (
-                          <>
+        <h3 className="text-lg font-bold mb-4">Booking Requests</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Pending Requests (Left) */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-md font-semibold">Pending Requests</h4>
+              <input
+                type="text"
+                placeholder="Search pending requests..."
+                className="p-2 border rounded-lg w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={pendingSearchTerm}
+                onChange={(e) => setPendingSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="h-[300px] overflow-y-auto scrollbar-hidden">
+              {pendingRequests.length > 0 ? (
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-gray-200">
+                    <tr>
+                      <th className="p-2">User</th>
+                      <th className="p-2">Lab</th>
+                      <th className="p-2">Date</th>
+                      <th className="p-2">Time</th>
+                      <th className="p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filterPendingRequests(pendingRequests).map((booking) => {
+                      const lab = labs.find((l) => l.lab_id === booking.lab_id);
+                      return (
+                        <tr key={booking.booking_id} className="border-t">
+                          <td className="p-2">{booking.user_id}</td>
+                          <td className="p-2">{lab?.lab_name || "Unknown"}</td>
+                          <td className="p-2">{booking.date}</td>
+                          <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
+                          <td className="p-2">
                             <button
                               className="bg-green-500 text-white px-2 py-1 rounded mr-1 hover:bg-green-600"
                               onClick={() => updateBookingStatus(booking.booking_id, "approved")}
@@ -479,18 +509,78 @@ export default function AdminDashboard() {
                             >
                               ❌
                             </button>
-                          </>
-                        )}
-                      </td>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500 p-2">No pending requests available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Approved/Rejected Requests (Right) */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-md font-semibold">Approved/Rejected Requests</h4>
+              <div className="flex gap-2">
+                <select
+                  className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as "all" | "approved" | "rejected" | "pending")}
+                >
+                  <option value="all">All</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="pending">Pending</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Search approved/rejected..."
+                  className="p-2 border rounded-lg w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={approvedRejectedSearchTerm}
+                  onChange={(e) => setApprovedRejectedSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="h-[300px] overflow-y-auto scrollbar-hidden">
+              {bookings.filter((b) => b.status !== "pending").length > 0 ? (
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 bg-gray-200">
+                    <tr>
+                      <th className="p-2">User</th>
+                      <th className="p-2">Lab</th>
+                      <th className="p-2">Date</th>
+                      <th className="p-2">Time</th>
+                      <th className="p-2">Status</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          ) : (
-            <p className="text-sm text-gray-500">No requests available.</p>
-          )}
+                  </thead>
+                  <tbody>
+                    {filterApprovedRejectedRequests(bookings.filter((b) => b.status !== "pending")).map((booking) => {
+                      const lab = labs.find((l) => l.lab_id === booking.lab_id);
+                      return (
+                        <tr key={booking.booking_id} className="border-t">
+                          <td className="p-2">{booking.user_id}</td>
+                          <td className="p-2">{lab?.lab_name || "Unknown"}</td>
+                          <td className="p-2">{booking.date}</td>
+                          <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
+                          <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
+                            {booking.status}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500 p-2">No approved or rejected requests available.</p>
+              )}
+            </div>
+          </div>
         </div>
+      </div>
         {/* Labs Overview Section with Search Bar */}
         <div className="relative">
           <div className="flex flex-col gap-4 mb-4">

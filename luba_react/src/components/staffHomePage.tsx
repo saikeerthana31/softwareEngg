@@ -4,15 +4,16 @@ import { supabase } from "../utils/supabaseClient";
 
 export default function LabBooking() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [labs, setLabs] = useState([]);
-  const [userId, setUserId] = useState(null);
-  const [selectedDate, setSelectedDate] = useState({});
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState({});
+  const [labs, setLabs] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Record<string, string>>({});
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<
+    Record<string, string>
+  >({});
   const [activePage, setActivePage] = useState("dashboard");
   const [upcomingLabs, setUpcomingLabs] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
-  // User Profile Data (Editable)
   const [userProfile, setUserProfile] = useState({
     name: "John Doe",
     email: "johndoe@example.com",
@@ -27,8 +28,20 @@ export default function LabBooking() {
   });
 
   useEffect(() => {
-    fetchLabs();
-    fetchUser();
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/loginStaff";
+      } else {
+        setUserId(user.id as string);
+        fetchLabs();
+      }
+    };
+
+    checkAuth();
+    history.replaceState({}, "", location.href);
   }, []);
 
   useEffect(() => {
@@ -127,24 +140,19 @@ export default function LabBooking() {
       <div className="w-64 bg-gray-900 text-white p-4 fixed h-full">
         <h1 className="text-xl font-bold mb-6">Lab Management</h1>
         <ul>
-          <li
-            className={`p-2 rounded cursor-pointer ${activePage === "dashboard" ? "bg-gray-700" : ""}`}
-            onClick={() => setActivePage("dashboard")}
-          >
-            Dashboard
-          </li>
-          <li
-            className={`p-2 rounded cursor-pointer ${activePage === "bookLab" ? "bg-gray-700" : ""}`}
-            onClick={() => setActivePage("bookLab")}
-          >
-            Book a Lab
-          </li>
-          <li
-            className={`p-2 rounded cursor-pointer ${activePage === "profileDetails" ? "bg-gray-700" : ""}`}
-            onClick={() => setActivePage("profileDetails")}
-          >
-            Profile Details
-          </li>
+          {["dashboard", "bookLab", "profileDetails"].map((page) => (
+            <li
+              key={page}
+              className={`p-2 rounded cursor-pointer ${activePage === page ? "bg-gray-700" : ""}`}
+              onClick={() => setActivePage(page)}
+            >
+              {page === "dashboard"
+                ? "Dashboard"
+                : page === "bookLab"
+                  ? "Book a Lab"
+                  : "Profile Details"}
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -152,10 +160,18 @@ export default function LabBooking() {
       <div className="flex-1 flex flex-col ml-64">
         {/* Navigation Bar */}
         <div className="bg-gray-800 text-white p-4 flex justify-between">
-          <h2 className="text-lg font-bold">
-            {activePage === "dashboard" ? "Dashboard" : activePage === "bookLab" ? "Book a Lab" : "Profile Details"}
+          <h2 className="text-lg font-bold capitalize">
+            {activePage.replace(/([A-Z])/g, " $1")}
           </h2>
-          <button className="bg-red-500 px-4 py-2 rounded">Logout</button>
+          <button
+            className="bg-red-500 px-4 py-2 rounded"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/loginStaff";
+            }}
+          >
+            Logout
+          </button>
         </div>
 
         {/* Page Content */}
@@ -273,7 +289,7 @@ export default function LabBooking() {
                   .map((lab) => (
                     <div
                       key={lab.lab_id}
-                      className="p-4 border rounded-lg shadow-md bg-white flex flex-col justify-between"
+                      className="p-4 border rounded-lg shadow-md bg-white"
                     >
                       <h2 className="text-lg font-bold">{lab.lab_name}</h2>
                       <p className="text-gray-600">
@@ -315,3 +331,4 @@ export default function LabBooking() {
     </div>
   );
 }
+

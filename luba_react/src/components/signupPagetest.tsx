@@ -17,6 +17,12 @@ export default function Signup() {
     return emailRegex.test(email);
   };
 
+  const isValidPassword = (password: string) => {
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSignup = async () => {
     setError("");
 
@@ -28,8 +34,10 @@ export default function Signup() {
       setError("Please enter a valid email address.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (!isValidPassword(password)) {
+      setError(
+        "Password must be at least 8 characters, include one uppercase letter, one lowercase letter, one number, and one special character.",
+      );
       return;
     }
 
@@ -38,7 +46,7 @@ export default function Signup() {
         email,
         password,
         options: {
-          data: { role }, // Set role in auth.users metadata
+          data: { role },
         },
       });
 
@@ -74,99 +82,91 @@ export default function Signup() {
       setError("Signup failed. Please try again.");
     }
   };
-  return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="w-full bg-slate-300 py-4 px-6 fixed top-0 left-0 text-black font-bold text-lg shadow-md">
-        Lab Utilization and Booking Application
-      </div>
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <img alt="Signup" src="/Signup.jpg" className="h-auto w-auto mb-5" />
-        <h2 className="mt-10 text-center text-2xl font-bold text-gray-900">
-          Create your account
-        </h2>
-      </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-md">
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          Create Your Account
+        </h2>
+
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-900"
+              className="block text-sm font-medium text-gray-700"
             >
               Full Name
             </label>
-            <div className="mt-2">
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-900"
+              className="block text-sm font-medium text-gray-700"
             >
-              Email address
+              Email Address
             </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-900"
+              className="block text-sm font-medium text-gray-700"
             >
               Password
             </label>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Password must be at least 8 characters, contain one uppercase
+              letter, one lowercase letter, one number, and one special
+              character.
+            </p>
           </div>
 
           <div>
             <label
               htmlFor="role"
-              className="block text-sm font-medium text-gray-900"
+              className="block text-sm font-medium text-gray-700"
             >
               Role
             </label>
-            <div className="mt-2">
-              <select
-                id="role"
-                name="role"
-                className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 focus:border-indigo-600 focus:outline-none"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="student">Student</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            <select
+              id="role"
+              name="role"
+              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="student">Student</option>
+              <option value="staff">Staff</option>
+            </select>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -174,10 +174,10 @@ export default function Signup() {
           <div>
             <button
               type="button"
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="flex w-full justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               onClick={handleSignup}
             >
-              Sign up
+              Sign Up
             </button>
           </div>
         </form>
