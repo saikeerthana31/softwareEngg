@@ -34,12 +34,12 @@ export default function Signup() {
       setError("Please enter a valid email address.");
       return;
     }
-    if (!isValidPassword(password)) {
-      setError(
-        "Password must be at least 8 characters, include one uppercase letter, one lowercase letter, one number, and one special character.",
-      );
-      return;
-    }
+    // if (!isValidPassword(password)) {
+    //   setError(
+    //     "Password must be at least 8 characters, include one uppercase letter, one lowercase letter, one number, and one special character.",
+    //   );
+    //   return;
+    // }
 
     try {
       const { data, error: authError } = await supabase.auth.signUp({
@@ -76,7 +76,7 @@ export default function Signup() {
       }
 
       console.log("User signed up successfully:", { email, name, role });
-      router.push("/login");
+      router.push("/loginStaff");
     } catch (err) {
       console.error(err);
       setError("Signup failed. Please try again.");
@@ -165,7 +165,7 @@ export default function Signup() {
               onChange={(e) => setRole(e.target.value)}
             >
               <option value="student">Student</option>
-              <option value="staff">Staff</option>
+              <option value="faculty">Faculty</option>
             </select>
           </div>
 

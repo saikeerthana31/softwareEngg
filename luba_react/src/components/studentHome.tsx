@@ -33,6 +33,7 @@ export default function StudentBookingDashboard() {
   const [student, setStudent] = useState<any>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Returns an array of time slots based on the day of the week.
   const getTimeSlots = (date: Date): string[] => {
@@ -67,6 +68,21 @@ export default function StudentBookingDashboard() {
     };
     fetchUser();
   }, []);
+    useEffect(() => {
+      const checkAuth = async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = "/loginStudent";
+        } else {
+          setUserId(user.id as string);
+        }
+      };
+
+      checkAuth();
+      history.replaceState({}, "", location.href);
+    }, []);
 
   // Once the student is loaded, fetch available labs and all of the student's bookings.
   useEffect(() => {

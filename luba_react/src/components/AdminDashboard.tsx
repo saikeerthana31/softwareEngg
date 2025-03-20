@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [pendingSearchTerm, setPendingSearchTerm] = useState(""); // Search term for pending requests
   const [approvedRejectedSearchTerm, setApprovedRejectedSearchTerm] = useState(""); // Search term for approved/rejected requests
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "rejected" | "pending">("all"); // Filter for approved/rejected section
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Update fetchBookings to correctly split pending and approved/rejected requests
   const fetchBookings = async () => {
@@ -221,6 +222,22 @@ export default function AdminDashboard() {
     setIsEditLabModalOpen(false);
     setEditingLab(null);
   };
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/loginAdmin";
+      } else {
+        setUserId(user.id as string);
+        fetchLabs();
+      }
+    };
+
+    checkAuth();
+    history.replaceState({}, "", location.href);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
