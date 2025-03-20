@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 import Calendar from "react-calendar";
@@ -28,7 +27,7 @@ export default function StudentBookingDashboard() {
   const [activeTab, setActiveTab] = useState("book");
   const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState(""); // e.g., "18:00-19:00"
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [student, setStudent] = useState<any>(null);
@@ -134,7 +133,7 @@ export default function StudentBookingDashboard() {
       lab_id: selectedLab.lab_id,
       from: timeFrom,
       to: timeTo,
-      booking_date: formatDate(selectedDate),
+      booking_date: formatDate(selectedDate || new Date()),
       status: "active",
     };
 
@@ -223,14 +222,14 @@ export default function StudentBookingDashboard() {
   const bookingHistory = bookings; // Includes both active and cancelled.
 
   // Compute available time slots based on the selected date.
-  const availableTimeSlots = getTimeSlots(selectedDate);
+  const availableTimeSlots = getTimeSlots(selectedDate ?? new Date());
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header with Three Tabs */}
-      <header className="bg-blue-600 text-white py-4 px-6 shadow">
+      {/* Header with Tabs and Logout */}
+      <header className="bg-blue-600 text-white py-4 px-6 shadow flex justify-between items-center">
         <h1 className="text-2xl font-bold">Student Booking Dashboard</h1>
-        <div className="mt-2 space-x-4">
+        <div className="space-x-4">
           <button
             className={`px-4 py-2 rounded ${
               activeTab === "book" ? "bg-blue-800" : "bg-blue-400"
@@ -254,6 +253,15 @@ export default function StudentBookingDashboard() {
             onClick={() => setActiveTab("history")}
           >
             Booking History
+          </button>
+          <button
+            className="px-4 py-2 bg-red-500 text-white rounded"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.replace("http://localhost:3000/loginStudent");
+            }}
+          >
+            Logout
           </button>
         </div>
       </header>
@@ -312,7 +320,13 @@ export default function StudentBookingDashboard() {
                 <label className="block text-gray-700 font-bold mb-2">
                   Select Date:
                 </label>
-                <Calendar onChange={setSelectedDate} value={selectedDate} />
+                323 |{" "}
+                <Calendar
+                  onChange={(value) =>
+                    setSelectedDate(value instanceof Date ? value : null)
+                  }
+                  value={selectedDate}
+                />
               </div>
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">
