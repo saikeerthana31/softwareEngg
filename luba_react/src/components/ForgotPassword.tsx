@@ -49,7 +49,7 @@ export default function ForgotPassword() {
             <img
               alt="Forgot Password"
               src="/forgot-password.jpg"
-              className="h-24 w-24 rounded-full mb-4 object-cover shadow-md"
+              className="object-cover "
             />
             <h2 className="text-2xl font-semibold text-gray-800">
               Reset Your Password
@@ -92,7 +92,7 @@ export default function ForgotPassword() {
               <button
                 type="button"
                 className="text-blue-600 hover:text-blue-800 text-sm"
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("/")}
               >
                 Back to Sign In
               </button>
