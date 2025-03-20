@@ -209,6 +209,7 @@ export default function LabBooking() {
                         }
                       >
                         <option value="">Select Time Slot</option>
+                        <option value="08:00 am - 10:35 pm">08:00 am - 10:35 pm</option>
                         <option value="10:45 am - 01:15 pm">10:45 am - 01:15 pm</option>
                         <option value="02:05 pm - 04:35 pm">02:05 pm - 04:35 pm</option>
                       </select>
