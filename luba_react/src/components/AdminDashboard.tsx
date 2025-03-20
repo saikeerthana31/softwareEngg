@@ -40,6 +40,7 @@ interface Booking {
   end_time: string;
   purpose: string;
   status: string;
+  users?: { name: string }; // Add this to include the user's name from the join
 }
 
 interface Utilization {
@@ -71,14 +72,17 @@ export default function AdminDashboard() {
   const fetchBookings = async () => {
     const { data: bookingsData, error: bookingsError } = await supabase
       .from("lab_bookings")
-      .select("*");
+      .select(`
+        *,
+        users (name)
+      `); // Join with users table to get the name
 
     if (bookingsError) {
       console.error("Error fetching bookings:", bookingsError.message);
       return;
     }
 
-    console.log("Bookings fetched:", bookingsData);
+    console.log("Bookings fetched with user names:", bookingsData);
     setBookings(bookingsData || []);
     setPendingRequests((bookingsData || []).filter((booking) => booking.status === "pending"));
   };
@@ -94,24 +98,32 @@ export default function AdminDashboard() {
   };
   const filterPendingRequests = (requests: Booking[]) =>
     requests.filter((booking) =>
-      [booking.user_id, labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown", booking.date]
+      [
+        booking.users?.name || "Unknown", // Use user name instead of user_id
+        labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown",
+        booking.date,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(pendingSearchTerm.toLowerCase())
     );
   
-  const filterApprovedRejectedRequests = (requests: Booking[]) =>
-    requests.filter((booking) => {
-      const matchesSearch = [booking.user_id, labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown", booking.date]
-        .join(" ")
-        .toLowerCase()
-        .includes(approvedRejectedSearchTerm.toLowerCase());
-      const matchesFilter =
-        statusFilter === "all" ||
-        booking.status === statusFilter ||
-        (statusFilter === "pending" && booking.status === "pending");
-      return matchesSearch && matchesFilter;
-    });
+    const filterApprovedRejectedRequests = (requests: Booking[]) =>
+      requests.filter((booking) => {
+        const matchesSearch = [
+          booking.users?.name || "Unknown", // Use user name instead of user_id
+          labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown",
+          booking.date,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(approvedRejectedSearchTerm.toLowerCase());
+        const matchesFilter =
+          statusFilter === "all" ||
+          booking.status === statusFilter ||
+          (statusFilter === "pending" && booking.status === "pending");
+        return matchesSearch && matchesFilter;
+      });
 
   const fetchUtilization = async () => {
     const { data: utilizationData, error: utilizationError } = await supabase.from("lab_utilization").select("*");
@@ -286,7 +298,10 @@ export default function AdminDashboard() {
   const openLabDetails = async (lab: Lab) => {
     const { data: bookingsData, error } = await supabase
       .from("lab_bookings")
-      .select("*")
+      .select(`
+        *,
+        users (name)
+      `)
       .eq("lab_id", lab.lab_id)
       .order("date", { ascending: true });
 
@@ -335,7 +350,7 @@ export default function AdminDashboard() {
         console.error("Error fetching booking:", fetchError.message, fetchError.details);
       }
       console.log("Booking visible to user:", existingBooking);
-  
+      
       // Attempt the update
       const { data, error } = await supabase
         .from("lab_bookings")
@@ -477,10 +492,10 @@ export default function AdminDashboard() {
         </div>
         
         {/* Booking requests */}
-        <div className="bg-white p-4 shadow-lg rounded mb-6">
+        {/* Update Pending Requests Table */}
+      <div className="bg-white p-4 shadow-lg rounded mb-6">
         <h3 className="text-lg font-bold mb-4">Booking Requests</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Pending Requests (Left) */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-md font-semibold">Pending Requests</h4>
@@ -509,7 +524,7 @@ export default function AdminDashboard() {
                       const lab = labs.find((l) => l.lab_id === booking.lab_id);
                       return (
                         <tr key={booking.booking_id} className="border-t">
-                          <td className="p-2">{booking.user_id}</td>
+                          <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
                           <td className="p-2">{lab?.lab_name || "Unknown"}</td>
                           <td className="p-2">{booking.date}</td>
                           <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
@@ -538,7 +553,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Approved/Rejected Requests (Right) */}
+          {/* Update Approved/Rejected Requests Table */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-md font-semibold">Approved/Rejected Requests</h4>
@@ -579,7 +594,7 @@ export default function AdminDashboard() {
                       const lab = labs.find((l) => l.lab_id === booking.lab_id);
                       return (
                         <tr key={booking.booking_id} className="border-t">
-                          <td className="p-2">{booking.user_id}</td>
+                          <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
                           <td className="p-2">{lab?.lab_name || "Unknown"}</td>
                           <td className="p-2">{booking.date}</td>
                           <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
@@ -756,67 +771,67 @@ export default function AdminDashboard() {
 
         {/* Lab Details Modal */}
         {selectedLab && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
-              <h2 className="text-lg font-bold mb-2">{selectedLab.lab.lab_name}</h2>
-              <p className="text-sm text-gray-600">{selectedLab.lab.description}</p>
-              <p className="text-sm text-gray-600">Capacity: {selectedLab.lab.capacity}</p>
-              <p className="text-sm text-gray-600">Location: {selectedLab.lab.location}</p>
-              <h3 className="font-bold mt-4">Lab Bookings</h3>
-              {selectedLab.bookings.length > 0 ? (
-                <table className="w-full mt-2 text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      <th className="p-2">User</th>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Time</th>
-                      <th className="p-2">Status</th>
-                      <th className="p-2">Actions</th>
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
+            <h2 className="text-lg font-bold mb-2">{selectedLab.lab.lab_name}</h2>
+            <p className="text-sm text-gray-600">{selectedLab.lab.description}</p>
+            <p className="text-sm text-gray-600">Capacity: {selectedLab.lab.capacity}</p>
+            <p className="text-sm text-gray-600">Location: {selectedLab.lab.location}</p>
+            <h3 className="font-bold mt-4">Lab Bookings</h3>
+            {selectedLab.bookings.length > 0 ? (
+              <table className="w-full mt-2 text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="p-2">User</th>
+                    <th className="p-2">Date</th>
+                    <th className="p-2">Time</th>
+                    <th className="p-2">Status</th>
+                    <th className="p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedLab.bookings.map((booking) => (
+                    <tr key={booking.booking_id} className="border-t">
+                      <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
+                      <td className="p-2">{booking.date}</td>
+                      <td className="p-2">{booking.start_time} - {booking.end_time}</td>
+                      <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
+                        {booking.status}
+                      </td>
+                      <td className="p-2">
+                        {booking.status === "pending" && (
+                          <>
+                            <button
+                              className="bg-green-500 text-white px-2 py-1 rounded mr-1"
+                              onClick={() => updateBookingStatus(booking.booking_id, "approved")}
+                            >
+                              ✓
+                            </button>
+                            <button
+                              className="bg-red-500 text-white px-2 py-1 rounded"
+                              onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
+                            >
+                              ✗
+                            </button>
+                          </>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {selectedLab.bookings.map((booking) => (
-                      <tr key={booking.booking_id} className="border-t">
-                        <td className="p-2">{booking.user_id}</td>
-                        <td className="p-2">{booking.date}</td>
-                        <td className="p-2">{booking.start_time} - {booking.end_time}</td>
-                        <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
-                          {booking.status}
-                        </td>
-                        <td className="p-2">
-                          {booking.status === "pending" && (
-                            <>
-                              <button
-                                className="bg-green-500 text-white px-2 py-1 rounded mr-1"
-                                onClick={() => updateBookingStatus(booking.booking_id, "approved")}
-                              >
-                                ✓
-                              </button>
-                              <button
-                                className="bg-red-500 text-white px-2 py-1 rounded"
-                                onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
-                              >
-                                ✗
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-sm text-gray-500">No bookings found.</p>
-              )}
-              <button
-                className="mt-4 bg-gray-500 text-white px-3 py-1 rounded w-full"
-                onClick={() => setSelectedLab(null)}
-              >
-                Close
-              </button>
-            </div>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-gray-500">No bookings found.</p>
+            )}
+            <button
+              className="mt-4 bg-gray-500 text-white px-3 py-1 rounded w-full"
+              onClick={() => setSelectedLab(null)}
+            >
+              Close
+            </button>
           </div>
-        )}
+        </div>
+      )}
       </div>
 
       <style jsx>{`
