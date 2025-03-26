@@ -13,7 +13,9 @@ export default function LabBooking() {
   const [activePage, setActivePage] = useState("dashboard");
   const [upcomingLabs, setUpcomingLabs] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [bookingPurpose, setBookingPurpose] = useState<Record<string, string>>({});
+  const [bookingPurpose, setBookingPurpose] = useState<Record<string, string>>(
+    {}
+  );
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
   const [bookedLabId, setBookedLabId] = useState(null);
@@ -33,14 +35,33 @@ export default function LabBooking() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        window.location.href = "/loginStaff";
-      } else {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error || !user) {
+          console.error(
+            "Authentication error:",
+            error?.message || "No user found"
+          );
+          await supabase.auth.signOut();
+          window.location.href = "/loginStaff";
+          return;
+        }
+
+        console.log("Authenticated user:", user);
         setUserId(user.id as string);
+        setUserProfile((prev) => ({
+          ...prev,
+          email: user.email || prev.email,
+        }));
         fetchLabs();
+      } catch (error) {
+        console.error("Unexpected error during authentication:", error);
+        await supabase.auth.signOut();
+        window.location.href = "/loginStaff";
       }
     };
 
@@ -60,15 +81,23 @@ export default function LabBooking() {
   };
 
   const fetchUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-    if (user) {
-      setUserId(user.id);
-      console.log("Logged-in user ID:", user.id);
-    } else {
-      console.error("Error fetching user:", error?.message);
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        console.log("Logged-in user ID:", user.id);
+      } else {
+        console.error("Error fetching user:", error?.message);
+        await supabase.auth.signOut();
+        window.location.href = "/loginStaff";
+      }
+    } catch (error) {
+      console.error("Unexpected error fetching user:", error);
+      await supabase.auth.signOut();
+      window.location.href = "/loginStaff";
     }
   };
 
@@ -96,57 +125,136 @@ export default function LabBooking() {
     setUpcomingLabs(data || []);
   };
 
+  const sendBookingEmail = async (
+    labName: string,
+    date: string,
+    timeSlot: string,
+    purpose: string,
+    email: string
+  ) => {
+    const emailBody = `
+      Subject: Lab Booking Confirmation
+      
+      Dear ${userProfile.name},
+      
+      Your lab booking has been successfully submitted with the following details:
+      
+      Lab: ${labName}
+      Date: ${date}
+      Time Slot: ${timeSlot}
+      Purpose: ${purpose}
+      Status: Pending
+      
+      You will receive another email once your booking is approved or rejected.
+      
+      Regards,
+      Lab Management Team
+    `;
+
+    try {
+      console.log("Request body:", {
+        to: email,
+        subject: "Lab Booking Confirmation",
+        text: emailBody,
+      });
+
+      const response = await fetch("/api/send_email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          subject: "Lab Booking Confirmation",
+          text: emailBody,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("API response status:", response.status);
+        console.error("API response headers:", [...response.headers.entries()]);
+
+        const rawResponse = await response.text();
+        console.error("Raw response body:", rawResponse);
+        throw new Error(
+          `Failed to send email: ${response.status} - Raw response: ${rawResponse}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Email sent successfully to:", email, data);
+    } catch (error) {
+      console.error("Error sending email:", error);
+    }
+  };
+
   const handleBookLab = async (labId: string, labName: string) => {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    if (!user || authError) {
-      console.error("User not authenticated:", authError?.message);
-      return;
-    }
+      if (authError || !user) {
+        console.error(
+          "User not authenticated:",
+          authError?.message || "No user found"
+        );
+        await supabase.auth.signOut();
+        window.location.href = "/loginStaff";
+        return;
+      }
 
-    const date = selectedDate[labId];
-    const timeSlot = selectedTimeSlot[labId];
-    const purpose = bookingPurpose[labId];
+      const date = selectedDate[labId];
+      const timeSlot = selectedTimeSlot[labId];
+      const purpose = bookingPurpose[labId];
 
-    // Validation for required fields
-    if (!date || !timeSlot || !purpose) {
-      alert("Please fill in date, time slot, and purpose before booking.");
-      return;
-    }
+      if (!date || !timeSlot || !purpose) {
+        alert("Please fill in date, time slot, and purpose before booking.");
+        return;
+      }
 
-    const [startTime, endTime] = timeSlot.split(" - ");
+      const [startTime, endTime] = timeSlot.split(" - ");
 
-    const { data, error } = await supabase.from("lab_bookings").insert([
-      {
-        user_id: user.id,
-        lab_id: labId,
+      const { data, error } = await supabase.from("lab_bookings").insert([
+        {
+          user_id: user.id,
+          lab_id: labId,
+          date,
+          start_time: startTime,
+          end_time: endTime,
+          purpose,
+          status: "pending",
+        },
+      ]);
+
+      if (error) {
+        console.error("Booking failed:", error.message || error);
+        return;
+      }
+
+      console.log("Booking successful:", data);
+      setPopupMessage(labName);
+      setBookedLabId(labId);
+      setShowPopup(true);
+
+      console.log("userProfile.email:", userProfile.email);
+      await sendBookingEmail(
+        labName,
         date,
-        start_time: startTime,
-        end_time: endTime,
+        timeSlot,
         purpose,
-        status: "pending",
-      },
-    ]);
+        userProfile.email
+      );
 
-    if (error) {
-      console.error("Booking failed:", error.message || error);
-      return;
+      setSelectedDate((prev) => ({ ...prev, [labId]: "" }));
+      setSelectedTimeSlot((prev) => ({ ...prev, [labId]: "" }));
+      setBookingPurpose((prev) => ({ ...prev, [labId]: "" }));
+
+      fetchUpcomingLabs();
+    } catch (error) {
+      console.error("Error in handleBookLab:", error);
+      await supabase.auth.signOut();
+      window.location.href = "/loginStaff";
     }
-
-    console.log("Booking successful:", data);
-    setPopupMessage(labName);
-    setBookedLabId(labId);
-    setShowPopup(true);
-
-    // Reset selections after successful booking
-    setSelectedDate((prev) => ({ ...prev, [labId]: "" }));
-    setSelectedTimeSlot((prev) => ({ ...prev, [labId]: "" }));
-    setBookingPurpose((prev) => ({ ...prev, [labId]: "" }));
-
-    fetchUpcomingLabs();
   };
 
   const handleProfileChange = (key, value) => {
@@ -155,7 +263,6 @@ export default function LabBooking() {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white p-4 fixed h-full">
         <h1 className="text-xl font-bold mb-6">Lab Management</h1>
         <ul>
@@ -177,9 +284,7 @@ export default function LabBooking() {
         </ul>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col ml-64">
-        {/* Navigation Bar */}
         <div className="bg-gray-800 text-white p-4 flex justify-between">
           <h2 className="text-lg font-bold capitalize">
             {activePage.replace(/([A-Z])/g, " $1")}
@@ -195,7 +300,6 @@ export default function LabBooking() {
           </button>
         </div>
 
-        {/* Page Content */}
         <div className="p-6 overflow-auto">
           {activePage === "dashboard" && (
             <div>
@@ -246,7 +350,6 @@ export default function LabBooking() {
             </div>
           )}
 
-          {/* Profile Details Page */}
           {activePage === "profileDetails" && (
             <div className="max-w-3xl mx-auto bg-[#f7f7f7] shadow-lg rounded-lg p-6 relative">
               <button
@@ -314,7 +417,6 @@ export default function LabBooking() {
             </div>
           )}
 
-          {/* Book a Lab Page */}
           {activePage === "bookLab" && (
             <>
               <input
@@ -394,7 +496,6 @@ export default function LabBooking() {
                   ))}
               </div>
 
-              {/* Popup Confirmation */}
               {showPopup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                   <div className="bg-white p-6 rounded-lg shadow-xl">
@@ -402,7 +503,8 @@ export default function LabBooking() {
                       Booking Confirmed!
                     </h2>
                     <p className="mb-4">
-                      {popupMessage} has been successfully booked.
+                      {popupMessage} has been successfully booked. Check your
+                      email for details.
                     </p>
                     <button
                       className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
