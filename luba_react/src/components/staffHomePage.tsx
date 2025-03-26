@@ -420,6 +420,9 @@ export default function LabBooking() {
                         }
                       >
                         <option value="">Select Time Slot</option>
+                        <option value="08:00 AM - 10:35 PM">
+                          08:00 AM - 10:35 PM
+                        </option>
                         <option value="10:45 AM - 01:15 PM">
                           10:45 AM - 01:15 PM
                         </option>
@@ -477,7 +480,7 @@ export default function LabBooking() {
           )}
         </div>
       </div>
-      
+
       <style jsx>{`
         @keyframes fadeIn {
           from {
