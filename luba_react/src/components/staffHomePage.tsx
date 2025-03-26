@@ -477,8 +477,7 @@ export default function LabBooking() {
           )}
         </div>
       </div>
-
-      {/* Custom CSS for animations */}
+      
       <style jsx>{`
         @keyframes fadeIn {
           from {
