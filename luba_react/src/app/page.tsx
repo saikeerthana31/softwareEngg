@@ -88,12 +88,7 @@ export default function Home() {
         >
           Sign Up
         </button>
-        <button
-          className="px-8 py-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 w-full text-lg transition-all"
-          onClick={() => handleRedirect("forgotPassword")}
-        >
-          Forgot Password
-        </button>
+        
       </div>
     </div>
   );
