@@ -22,7 +22,6 @@ export default function Signup() {
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return passwordRegex.test(password);
   };
-
   const handleSignup = async () => {
     setError("");
 
@@ -34,20 +33,13 @@ export default function Signup() {
       setError("Please enter a valid email address.");
       return;
     }
-    // if (!isValidPassword(password)) {
-    //   setError(
-    //     "Password must be at least 8 characters, include one uppercase letter, one lowercase letter, one number, and one special character.",
-    //   );
-    //   return;
-    // }
+    
 
     try {
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { role },
-        },
+        options: { data: { role } },
       });
 
       if (authError) {
@@ -61,6 +53,10 @@ export default function Signup() {
         return;
       }
 
+      // Log the current session/role (should be anon)
+      const { data: session } = await supabase.auth.getSession();
+      console.log("Session before insert:", session);
+
       const { error: insertError } = await supabase.from("users").insert({
         user_id: user.id,
         name,
@@ -71,7 +67,6 @@ export default function Signup() {
 
       if (insertError) {
         setError("Failed to create user profile: " + insertError.message);
-        await supabase.auth.admin.deleteUser(user.id);
         return;
       }
 
@@ -82,6 +77,7 @@ export default function Signup() {
       setError("Signup failed. Please try again.");
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 sm:px-6 lg:px-8">

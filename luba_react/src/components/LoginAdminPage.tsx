@@ -14,7 +14,9 @@ export default function LoginAdmin() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   // Fixed regex: removed the extra dash to avoid invalid range error
   const sanitizeInput = (input: string) => input.replace(/['";-]/g, "");
-
+  const handleRedirect = (role: string) => {
+    router.push(`/${role}`);
+  }
   const handleLogin = async () => {
     setError("");
 
@@ -107,9 +109,17 @@ export default function LoginAdmin() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <div className="text-sm">
+                  <a onClick={() => handleRedirect('forgotPassword')} className="font-semibold text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+                </div>
+            </div>
             <input
               type="password"
               className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"

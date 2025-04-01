@@ -19,7 +19,7 @@ export default function StudentLogin() {
   const handleRedirect = (role: string) => {
     router.push(`/${role}`);
   }
-  
+
   const handleLogin = async () => {
     setError("");
 
@@ -50,7 +50,7 @@ export default function StudentLogin() {
 
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role")
+        .select("role, pending_approval")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -61,6 +61,10 @@ export default function StudentLogin() {
 
       if (userData.role !== "student") {
         setError("Access denied. Only students are allowed.");
+        return;
+      }
+      if (userData.pending_approval !== false) {
+        setError("Your account is pending approval.");
         return;
       }
 

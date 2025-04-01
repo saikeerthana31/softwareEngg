@@ -15,7 +15,7 @@ export default function StaffLogin() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   // Sanitize input to remove potentially harmful characters
   const sanitizeInput = (input: string) => input.replace(/['";-]/g, "");
-  
+
   const handleRedirect = (role: string) => {
     router.push(`/${role}`);
   }
@@ -51,7 +51,7 @@ export default function StaffLogin() {
       // Fetch user role from Supabase users table
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role")
+        .select("role,pending_approval")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -62,6 +62,10 @@ export default function StaffLogin() {
 
       if (userData.role !== "faculty") {
         setError("Access denied. Only staff members are allowed.");
+        return;
+      }
+      if (userData.pending_approval) {
+        setError("Your account is pending approval.");
         return;
       }
 
