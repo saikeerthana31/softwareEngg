@@ -27,8 +27,8 @@ export default function Home() {
       {/* Main Content Container */}
       <div className="relative z-10 flex flex-col items-center mt-20">
         {/* Title */}
-        <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mb-12 text-center">
-          Welcome to LUBA
+        <h1 className="text-5xl font-extrabold text-black drop-shadow-lg mb-12 text-center">
+          Welcome 
         </h1>
 
         {/* Login Cards Container */}
