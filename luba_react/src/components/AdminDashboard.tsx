@@ -18,7 +18,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { UUID } from "crypto";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -40,7 +39,7 @@ interface Booking {
   end_time: string;
   purpose: string;
   status: string;
-  users?: { name: string }; // Add this to include the user's name from the join
+  users?: { name: string };
 }
 
 interface Utilization {
@@ -61,21 +60,20 @@ export default function AdminDashboard() {
   const [isAddLabModalOpen, setIsAddLabModalOpen] = useState(false);
   const [isEditLabModalOpen, setIsEditLabModalOpen] = useState(false);
   const [editingLab, setEditingLab] = useState<Lab | null>(null);
-  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
-  const [pendingSearchTerm, setPendingSearchTerm] = useState(""); // Search term for pending requests
-  const [approvedRejectedSearchTerm, setApprovedRejectedSearchTerm] = useState(""); // Search term for approved/rejected requests
-  const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "rejected" | "pending">("all"); // Filter for approved/rejected section
+  const [pendingSearchTerm, setPendingSearchTerm] = useState("");
+  const [approvedRejectedSearchTerm, setApprovedRejectedSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "rejected" | "pending">("all");
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Update fetchBookings to correctly split pending and approved/rejected requests
   const fetchBookings = async () => {
     const { data: bookingsData, error: bookingsError } = await supabase
       .from("lab_bookings")
       .select(`
         *,
         users (name)
-      `); // Join with users table to get the name
+      `);
 
     if (bookingsError) {
       console.error("Error fetching bookings:", bookingsError.message);
@@ -96,10 +94,11 @@ export default function AdminDashboard() {
     console.log("Labs fetched:", labsData);
     setLabs(labsData || []);
   };
+
   const filterPendingRequests = (requests: Booking[]) =>
     requests.filter((booking) =>
       [
-        booking.users?.name || "Unknown", // Use user name instead of user_id
+        booking.users?.name || "Unknown",
         labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown",
         booking.date,
       ]
@@ -107,23 +106,23 @@ export default function AdminDashboard() {
         .toLowerCase()
         .includes(pendingSearchTerm.toLowerCase())
     );
-  
-    const filterApprovedRejectedRequests = (requests: Booking[]) =>
-      requests.filter((booking) => {
-        const matchesSearch = [
-          booking.users?.name || "Unknown", // Use user name instead of user_id
-          labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown",
-          booking.date,
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(approvedRejectedSearchTerm.toLowerCase());
-        const matchesFilter =
-          statusFilter === "all" ||
-          booking.status === statusFilter ||
-          (statusFilter === "pending" && booking.status === "pending");
-        return matchesSearch && matchesFilter;
-      });
+
+  const filterApprovedRejectedRequests = (requests: Booking[]) =>
+    requests.filter((booking) => {
+      const matchesSearch = [
+        booking.users?.name || "Unknown",
+        labs.find((l) => l.lab_id === booking.lab_id)?.lab_name || "Unknown",
+        booking.date,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(approvedRejectedSearchTerm.toLowerCase());
+      const matchesFilter =
+        statusFilter === "all" ||
+        booking.status === statusFilter ||
+        (statusFilter === "pending" && booking.status === "pending");
+      return matchesSearch && matchesFilter;
+    });
 
   const fetchUtilization = async () => {
     const { data: utilizationData, error: utilizationError } = await supabase.from("lab_utilization").select("*");
@@ -234,6 +233,7 @@ export default function AdminDashboard() {
     setIsEditLabModalOpen(false);
     setEditingLab(null);
   };
+
   useEffect(() => {
     const checkAuth = async () => {
       const {
@@ -314,7 +314,6 @@ export default function AdminDashboard() {
 
   const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
     try {
-      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         console.error("Authentication error:", authError?.message || "No user logged in");
@@ -322,8 +321,7 @@ export default function AdminDashboard() {
         return;
       }
       console.log("Authenticated user ID:", user.id);
-  
-      // Fetch user role
+
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("role")
@@ -335,42 +333,65 @@ export default function AdminDashboard() {
         return;
       }
       console.log("User role:", userData.role);
-  
-      // Log booking ID details
-      console.log("Attempting to update booking with ID:", bookingId);
-      console.log("Type of bookingId:", typeof bookingId);
-      console.log("bookingId value:", JSON.stringify(bookingId));
-  
-      // Verify the booking exists and is accessible
-      const { data: existingBooking, error: fetchError } = await supabase
+
+      const { data: bookingData, error: bookingError } = await supabase
         .from("lab_bookings")
-        .select("*")
-        .eq("booking_id", bookingId);
-      if (fetchError) {
-        console.error("Error fetching booking:", fetchError.message, fetchError.details);
+        .select(`
+          *,
+          users (name),
+          labs (lab_name)
+        `)
+        .eq("booking_id", bookingId)
+        .single();
+      if (bookingError || !bookingData) {
+        console.error("Error fetching booking details:", bookingError?.message);
+        alert("Unable to fetch booking details.");
+        return;
       }
-      console.log("Booking visible to user:", existingBooking);
-      
-      // Attempt the update
+
       const { data, error } = await supabase
         .from("lab_bookings")
         .update({ status })
         .eq("booking_id", bookingId)
         .select();
-  
+
       if (error) {
         console.error("Supabase update error:", error.message, error.details, error.hint);
         alert(`Failed to update booking: ${error.message}`);
         return;
       }
-  
+
       if (!data || data.length === 0) {
         console.error("No rows updated for booking_id:", bookingId);
         alert("No booking found to update. Check RLS permissions or booking ID.");
         return;
       }
-  
+
       console.log("Booking updated successfully:", data[0]);
+
+      // Send email notification
+      const emailSubject = `Lab Booking ${status === "approved" ? "Approved" : "Rejected"}`;
+      const emailText = `Dear ${bookingData.users?.name || "User"},\n\nYour booking for ${bookingData.labs?.lab_name || "Unknown Lab"} on ${bookingData.date} from ${bookingData.start_time} to ${bookingData.end_time} has been ${status}.\n\nPurpose: ${bookingData.purpose}\n\nRegards,\nLab Management Team`;
+
+      const emailResponse = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject: emailSubject,
+          text: emailText,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.error("Error sending email:", errorData);
+        alert("Booking updated, but failed to send email notification.");
+      } else {
+        console.log("Email sent successfully");
+      }
+
       await fetchBookings();
       if (selectedLab) {
         await openLabDetails(selectedLab.lab);
@@ -381,7 +402,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filter labs based on search term
   const filteredLabs = labs.filter((lab) =>
     [lab.lab_name, lab.location, lab.description || ""]
       .join(" ")
@@ -414,7 +434,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="relative flex min-h-screen bg-gray-100">
-      {/* Sidebar - Fixed Position */}
       <aside
         className={`fixed top-0 left-0 z-10 bg-white shadow-xl text-black h-screen flex flex-col justify-between transition-all duration-300 ${
           isOpen ? "w-64" : "w-16"
@@ -455,13 +474,11 @@ export default function AdminDashboard() {
         )}
       </aside>
 
-      {/* Main Content - Dynamic Padding */}
       <div
         className={`flex-1 p-6 flex flex-col gap-6 transition-all duration-300 ${
           isOpen ? "pl-72" : "pl-24"
         }`}
       >
-        {/* 📊 Lab Utilization Chart */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white p-4 shadow-lg rounded">
             <h3 className="text-lg font-bold mb-2">Lab Utilization</h3>
@@ -472,148 +489,145 @@ export default function AdminDashboard() {
             )}
           </div>
           <div className="bg-white p-4 shadow-lg rounded">
-          <h3 className="text-lg font-bold mb-2">Booking Trends</h3>
-          {bookings.length > 0 ? (
-            <Line
-              data={bookingChartData}
-              height={150}
-              options={{
-                scales: {
-                  y: {
-                    beginAtZero: true, // This ensures the y-axis starts at 0
+            <h3 className="text-lg font-bold mb-2">Booking Trends</h3>
+            {bookings.length > 0 ? (
+              <Line
+                data={bookingChartData}
+                height={150}
+                options={{
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                    },
                   },
-                },
-              }}
-            />
-          ) : (
-            <p className="text-sm text-gray-500">No booking data available.</p>
-          )}
-        </div>
-        </div>
-        
-        {/* Booking requests */}
-        {/* Update Pending Requests Table */}
-      <div className="bg-white p-4 shadow-lg rounded mb-6">
-        <h3 className="text-lg font-bold mb-4">Booking Requests</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-md font-semibold">Pending Requests</h4>
-              <input
-                type="text"
-                placeholder="Search pending requests..."
-                className="p-2 border rounded-lg w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={pendingSearchTerm}
-                onChange={(e) => setPendingSearchTerm(e.target.value)}
+                }}
               />
-            </div>
-            <div className="h-[300px] overflow-y-auto scrollbar-hidden">
-              {pendingRequests.length > 0 ? (
-                <table className="w-full text-sm border-collapse">
-                  <thead className="sticky top-0 bg-gray-200">
-                    <tr>
-                      <th className="p-2">User</th>
-                      <th className="p-2">Lab</th>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Time</th>
-                      <th className="p-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filterPendingRequests(pendingRequests).map((booking) => {
-                      const lab = labs.find((l) => l.lab_id === booking.lab_id);
-                      return (
-                        <tr key={booking.booking_id} className="border-t">
-                          <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
-                          <td className="p-2">{lab?.lab_name || "Unknown"}</td>
-                          <td className="p-2">{booking.date}</td>
-                          <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
-                          <td className="p-2">
-                            <button
-                              className="bg-green-500 text-white px-2 py-1 rounded mr-1 hover:bg-green-600"
-                              onClick={() => updateBookingStatus(booking.booking_id, "approved")}
-                            >
-                              ✅
-                            </button>
-                            <button
-                              className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                              onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
-                            >
-                              ❌
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-sm text-gray-500 p-2">No pending requests available.</p>
-              )}
-            </div>
+            ) : (
+              <p className="text-sm text-gray-500">No booking data available.</p>
+            )}
           </div>
+        </div>
 
-          {/* Update Approved/Rejected Requests Table */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-md font-semibold">Approved/Rejected Requests</h4>
-              <div className="flex gap-2">
-                <select
-                  className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as "all" | "approved" | "rejected" | "pending")}
-                >
-                  <option value="all">All</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="pending">Pending</option>
-                </select>
+        <div className="bg-white p-4 shadow-lg rounded mb-6">
+          <h3 className="text-lg font-bold mb-4">Booking Requests</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-md font-semibold">Pending Requests</h4>
                 <input
                   type="text"
-                  placeholder="Search approved/rejected..."
+                  placeholder="Search pending requests..."
                   className="p-2 border rounded-lg w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={approvedRejectedSearchTerm}
-                  onChange={(e) => setApprovedRejectedSearchTerm(e.target.value)}
+                  value={pendingSearchTerm}
+                  onChange={(e) => setPendingSearchTerm(e.target.value)}
                 />
               </div>
+              <div className="h-[300px] overflow-y-auto scrollbar-hidden">
+                {pendingRequests.length > 0 ? (
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="sticky top-0 bg-gray-200">
+                      <tr>
+                        <th className="p-2">User</th>
+                        <th className="p-2">Lab</th>
+                        <th className="p-2">Date</th>
+                        <th className="p-2">Time</th>
+                        <th className="p-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterPendingRequests(pendingRequests).map((booking) => {
+                        const lab = labs.find((l) => l.lab_id === booking.lab_id);
+                        return (
+                          <tr key={booking.booking_id} className="border-t">
+                            <td className="p-2">{booking.users?.name || "Unknown"}</td>
+                            <td className="p-2">{lab?.lab_name || "Unknown"}</td>
+                            <td className="p-2">{booking.date}</td>
+                            <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
+                            <td className="p-2">
+                              <button
+                                className="bg-green-500 text-white px-2 py-1 rounded mr-1 hover:bg-green-600"
+                                onClick={() => updateBookingStatus(booking.booking_id, "approved")}
+                              >
+                                ✅
+                              </button>
+                              <button
+                                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
+                              >
+                                ❌
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-sm text-gray-500 p-2">No pending requests available.</p>
+                )}
+              </div>
             </div>
-            <div className="h-[300px] overflow-y-auto scrollbar-hidden">
-              {bookings.filter((b) => b.status !== "pending").length > 0 ? (
-                <table className="w-full text-sm border-collapse">
-                  <thead className="sticky top-0 bg-gray-200">
-                    <tr>
-                      <th className="p-2">User</th>
-                      <th className="p-2">Lab</th>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Time</th>
-                      <th className="p-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filterApprovedRejectedRequests(bookings.filter((b) => b.status !== "pending")).map((booking) => {
-                      const lab = labs.find((l) => l.lab_id === booking.lab_id);
-                      return (
-                        <tr key={booking.booking_id} className="border-t">
-                          <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
-                          <td className="p-2">{lab?.lab_name || "Unknown"}</td>
-                          <td className="p-2">{booking.date}</td>
-                          <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
-                          <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
-                            {booking.status}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-sm text-gray-500 p-2">No approved or rejected requests available.</p>
-              )}
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-md font-semibold">Approved/Rejected Requests</h4>
+                <div className="flex gap-2">
+                  <select
+                    className="p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as "all" | "approved" | "rejected" | "pending")}
+                  >
+                    <option value="all">All</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search approved/rejected..."
+                    className="p-2 border rounded-lg w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={approvedRejectedSearchTerm}
+                    onChange={(e) => setApprovedRejectedSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="h-[300px] overflow-y-auto scrollbar-hidden">
+                {bookings.filter((b) => b.status !== "pending").length > 0 ? (
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="sticky top-0 bg-gray-200">
+                      <tr>
+                        <th className="p-2">User</th>
+                        <th className="p-2">Lab</th>
+                        <th className="p-2">Date</th>
+                        <th className="p-2">Time</th>
+                        <th className="p-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterApprovedRejectedRequests(bookings.filter((b) => b.status !== "pending")).map((booking) => {
+                        const lab = labs.find((l) => l.lab_id === booking.lab_id);
+                        return (
+                          <tr key={booking.booking_id} className="border-t">
+                            <td className="p-2">{booking.users?.name || "Unknown"}</td>
+                            <td className="p-2">{lab?.lab_name || "Unknown"}</td>
+                            <td className="p-2">{booking.date}</td>
+                            <td className="p-2">{`${booking.start_time} - ${booking.end_time}`}</td>
+                            <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
+                              {booking.status}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-sm text-gray-500 p-2">No approved or rejected requests available.</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-        {/* Labs Overview Section with Search Bar */}
+
         <div className="relative">
           <div className="flex flex-col gap-4 mb-4">
             <h2 className="text-xl font-bold">Labs Overview</h2>
@@ -668,7 +682,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Add Lab Modal */}
         {isAddLabModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
@@ -710,7 +723,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Edit Lab Modal with Delete */}
         {isEditLabModalOpen && editingLab && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
@@ -769,69 +781,68 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Lab Details Modal */}
         {selectedLab && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
-            <h2 className="text-lg font-bold mb-2">{selectedLab.lab.lab_name}</h2>
-            <p className="text-sm text-gray-600">{selectedLab.lab.description}</p>
-            <p className="text-sm text-gray-600">Capacity: {selectedLab.lab.capacity}</p>
-            <p className="text-sm text-gray-600">Location: {selectedLab.lab.location}</p>
-            <h3 className="font-bold mt-4">Lab Bookings</h3>
-            {selectedLab.bookings.length > 0 ? (
-              <table className="w-full mt-2 text-sm border-collapse">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="p-2">User</th>
-                    <th className="p-2">Date</th>
-                    <th className="p-2">Time</th>
-                    <th className="p-2">Status</th>
-                    <th className="p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedLab.bookings.map((booking) => (
-                    <tr key={booking.booking_id} className="border-t">
-                      <td className="p-2">{booking.users?.name || "Unknown"}</td> {/* Display name */}
-                      <td className="p-2">{booking.date}</td>
-                      <td className="p-2">{booking.start_time} - {booking.end_time}</td>
-                      <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
-                        {booking.status}
-                      </td>
-                      <td className="p-2">
-                        {booking.status === "pending" && (
-                          <>
-                            <button
-                              className="bg-green-500 text-white px-2 py-1 rounded mr-1"
-                              onClick={() => updateBookingStatus(booking.booking_id, "approved")}
-                            >
-                              ✓
-                            </button>
-                            <button
-                              className="bg-red-500 text-white px-2 py-1 rounded"
-                              onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
-                            >
-                              ✗
-                            </button>
-                          </>
-                        )}
-                      </td>
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
+              <h2 className="text-lg font-bold mb-2">{selectedLab.lab.lab_name}</h2>
+              <p className="text-sm text-gray-600">{selectedLab.lab.description}</p>
+              <p className="text-sm text-gray-600">Capacity: {selectedLab.lab.capacity}</p>
+              <p className="text-sm text-gray-600">Location: {selectedLab.lab.location}</p>
+              <h3 className="font-bold mt-4">Lab Bookings</h3>
+              {selectedLab.bookings.length > 0 ? (
+                <table className="w-full mt-2 text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200">
+                      <th className="p-2">User</th>
+                      <th className="p-2">Date</th>
+                      <th className="p-2">Time</th>
+                      <th className="p-2">Status</th>
+                      <th className="p-2">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-sm text-gray-500">No bookings found.</p>
-            )}
-            <button
-              className="mt-4 bg-gray-500 text-white px-3 py-1 rounded w-full"
-              onClick={() => setSelectedLab(null)}
-            >
-              Close
-            </button>
+                  </thead>
+                  <tbody>
+                    {selectedLab.bookings.map((booking) => (
+                      <tr key={booking.booking_id} className="border-t">
+                        <td className="p-2">{booking.users?.name || "Unknown"}</td>
+                        <td className="p-2">{booking.date}</td>
+                        <td className="p-2">{booking.start_time} - {booking.end_time}</td>
+                        <td className={`p-2 ${booking.status === "approved" ? "text-green-600" : "text-red-600"}`}>
+                          {booking.status}
+                        </td>
+                        <td className="p-2">
+                          {booking.status === "pending" && (
+                            <>
+                              <button
+                                className="bg-green-500 text-white px-2 py-1 rounded mr-1"
+                                onClick={() => updateBookingStatus(booking.booking_id, "approved")}
+                              >
+                                ✓
+                              </button>
+                              <button
+                                className="bg-red-500 text-white px-2 py-1 rounded"
+                                onClick={() => updateBookingStatus(booking.booking_id, "rejected")}
+                              >
+                                ✗
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-gray-500">No bookings found.</p>
+              )}
+              <button
+                className="mt-4 bg-gray-500 text-white px-3 py-1 rounded w-full"
+                onClick={() => setSelectedLab(null)}
+              >
+                Close
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
 
       <style jsx>{`
