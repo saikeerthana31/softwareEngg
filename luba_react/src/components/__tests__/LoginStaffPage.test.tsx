@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StaffLogin from '../src/components/StaffLogin';
-import { supabase } from '../utils/supabaseClient';
+import StaffLogin from 'components/LoginStaffPage';
+import { supabase } from 'utils/supabaseClient';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

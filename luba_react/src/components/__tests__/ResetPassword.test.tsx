@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import ResetPassword from '../src/components/ResetPassword';
-import { supabase } from '../utils/supabaseClient';
+import ResetPassword from 'components/ResetPassword';
+import { supabase } from 'utils/supabaseClient';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

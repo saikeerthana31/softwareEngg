@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import AdminHome from '../src/components/AdminHome';
-import { supabase } from '../utils/supabaseClient';
+import AdminHome from 'components/AdminHomePage';
+import { supabase } from 'utils/supabaseClient';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

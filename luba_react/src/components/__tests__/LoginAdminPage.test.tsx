@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import LoginAdmin from '../src/components/LoginAdmin';
-import { supabase } from '../utils/supabaseClient';
+import LoginAdmin from 'components/LoginAdminPage';
+import { supabase } from 'utils/supabaseClient';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StaffDashboard from '../src/components/StaffDashboard';
-import * as supabaseActions from '../src/actions/supabaseActions';
+import StaffDashboard from '../staffDashboard';
+import * as supabaseActions from '../../actions/supabaseActions';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
