@@ -21,12 +21,13 @@ export default function LabBooking() {
   const [bookedLabId, setBookedLabId] = useState(null);
 
   const [userProfile, setUserProfile] = useState({
-    name: "John Doe",
+    name: "Sai keerthana",
     email: "johndoe@example.com",
     collegeId: "CSE12345",
     specialization: "Computer Science and Engineering",
+    role: "Assistant Professor",
     program: "B.Tech",
-    gender: "Male",
+    gender: "Female",
     campus: "Coimbatore",
     dob: "2002-05-15",
     phone: "+91 9876543210",
@@ -340,6 +341,7 @@ export default function LabBooking() {
               <div className="grid grid-cols-2 gap-6">
                 {[
                   { label: "College ID", key: "collegeId" },
+                  { label: "Role", key: "role" },
                   { label: "Specialization", key: "specialization" },
                   { label: "Program", key: "program" },
                   { label: "Gender", key: "gender" },
