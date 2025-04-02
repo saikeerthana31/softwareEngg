@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StaffManagement from 'components/StaffManagement';
+import StaffManagement from '../src/components/StaffManagement';
 import * as supabaseActions from '../src/actions/supabaseActions';
 
 // Mock Next.js router
