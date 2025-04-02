@@ -10,7 +10,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock supabaseActions
-jest.mock('../src/actions/supabaseActions', () => ({
+jest.mock('../../actions/supabaseActions', () => ({
   fetchStaffData: jest.fn(() =>
     Promise.resolve({
       assignedTasks: [{ id: '202', title: 'Grade Assignments' }],
