@@ -15,6 +15,10 @@ export default function StudentLogin() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   // Sanitize input to remove potentially harmful characters
   const sanitizeInput = (input: string) => input.replace(/['";-]/g, "");
+  
+  const handleRedirect = (role: string) => {
+    router.push(`/${role}`);
+  }
 
   const handleLogin = async () => {
     setError("");
@@ -46,7 +50,7 @@ export default function StudentLogin() {
 
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("role")
+        .select("role, pending_approval")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -57,6 +61,10 @@ export default function StudentLogin() {
 
       if (userData.role !== "student") {
         setError("Access denied. Only students are allowed.");
+        return;
+      }
+      if (userData.pending_approval !== false) {
+        setError("Your account is pending approval.");
         return;
       }
 
@@ -115,12 +123,17 @@ export default function StudentLogin() {
               </div>
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <div className="text-sm">
+                  <a onClick={() => handleRedirect('forgotPassword')} className="font-semibold text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+                </div>
+              </div>
               <div className="mt-1">
                 <input
                   id="password"

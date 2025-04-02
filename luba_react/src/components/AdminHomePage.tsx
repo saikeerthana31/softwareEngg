@@ -5,13 +5,30 @@ import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
+import { supabase } from "utils/supabaseClient";
 
 
 export default function AdminHome() {
   const [isOpen, setIsOpen] = useState(true);
   const [admin, setAdmin] = useState<{ email: string } | null>(null);
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+   useEffect(() => {
+      const checkAuth = async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = "/loginAdmin";
+        } else {
+          setUserId(user.id as string);
 
+        }
+      };
+  
+      checkAuth();
+      history.replaceState({}, "", location.href);
+    }, []);
   useEffect(() => {
     try {
       const storedAdmin = localStorage.getItem("adminUser");
