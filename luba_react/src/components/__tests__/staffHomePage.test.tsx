@@ -1,66 +1,95 @@
-// src/components/__tests__/staffHomePage.test.tsx
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import StaffHomePage from '../staffHomePage';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import StaffHomePage from "../staffHomePage";
+import { useRouter } from "next/navigation";
 
-// Mock dependencies
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+  })),
 }));
 
-// Mock localStorage
-const mockLocalStorage = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
+jest.mock("@/utils/supabaseClient", () => ({
+  supabase: {
+    auth: {
+      getUser: jest.fn(() =>
+        Promise.resolve({
+          data: { user: { id: "staff-id" } },
+          error: null,
+        })
+      ),
+      signOut: jest.fn(() => Promise.resolve({ error: null })),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          gte: jest.fn(() => ({
+            order: jest.fn(() =>
+              Promise.resolve({
+                data: [],
+                error: null,
+              })
+            ),
+          })),
+        })),
+      })),
+    })),
+  },
+}));
 
-Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage,
-});
-
-describe('StaffHomePage Component', () => {
+describe("StaffHomePage Component", () => {
   const mockPush = jest.fn();
-  
+  const mockWindowLocation = window.location;
+
+  beforeAll(() => {
+    Object.defineProperty(window, "location", {
+      value: {
+        href: "",
+        assign: jest.fn(),
+      },
+      writable: true,
+    });
+  });
+
   beforeEach(() => {
+    jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
     });
-    
-    mockLocalStorage.getItem.mockImplementation((key) => {
-      if (key === 'staff') {
-        return JSON.stringify({ id: 'staff-id', email: 'staff@example.com' });
-      }
-      return null;
+  });
+
+  afterAll(() => {
+    Object.defineProperty(window, "location", {
+      value: mockWindowLocation,
     });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  it("renders without crashing", async () => {
+    await act(async () => {
+      render(<StaffHomePage />);
+    });
 
-  it('renders without crashing', async () => {
-    render(<StaffHomePage />);
     await waitFor(() => {
-      const dashboardElements = screen.getAllByText(/dashboard/i);
-      expect(dashboardElements.length).toBeGreaterThan(0);
+      expect(screen.getByText("Lab Management")).toBeInTheDocument();
     });
   });
 
-  // it('displays staff email in sidebar', async () => {
-  //   render(<StaffHomePage />);
-  //   await waitFor(() => {
-  //     expect(screen.getByText('staff@example.com')).toBeInTheDocument();
-  //   });
-  // });
-
-  it('redirects to login if no staff user in localStorage', async () => {
-    mockLocalStorage.getItem.mockReturnValueOnce(null);
-    render(<StaffHomePage />);
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/loginStaff');
+  it("redirects to login if no user is authenticated", async () => {
+    const { supabase } = require("@/utils/supabaseClient");
+    supabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: new Error("Not authenticated"),
     });
+
+    await act(async () => {
+      render(<StaffHomePage />);
+    });
+
+    await waitFor(
+      () => {
+        expect(window.location.href).toBe("/loginStaff");
+      },
+      { timeout: 3000 }
+    );
   });
 });
