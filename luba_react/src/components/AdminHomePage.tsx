@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
-import { supabase } from "utils/supabaseClient";
+import { supabase } from "../utils/supabaseClient";
 
 
 export default function AdminHome() {
