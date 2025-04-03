@@ -35,8 +35,6 @@ describe('LoginAdmin Component', () => {
 
   it('displays error for invalid email', async () => {
     render(<LoginAdmin />);
-    
-    // Find the email input by its type
     const emailInput = screen.getByRole('textbox');
     fireEvent.change(emailInput, { target: { value: 'invalid' } });
     fireEvent.click(screen.getByText('Sign in'));
@@ -46,5 +44,4 @@ describe('LoginAdmin Component', () => {
     });
   });
 
-  // Removed the failing "logs in successfully as admin" test case
 });
