@@ -30,12 +30,17 @@ describe('Signup Component', () => {
     expect(screen.getByText('Create Your Account')).toBeInTheDocument();
   });
 
-  it('displays error for invalid email', () => {
+  it('displays error for invalid email', async () => {
     render(<Signup />);
-    fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } }); // Fill name
+    fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } });
     fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'invalid' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Password123!' } });
+    fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'student' } });
     fireEvent.click(screen.getByText('Sign Up'));
-    expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument(); // Adjust text if needed
+
+    await waitFor(() => {
+      expect(screen.getByText('Please enter a valid email address.')).toBeInTheDocument();
+    });
   });
 
   it('signs up successfully', async () => {
