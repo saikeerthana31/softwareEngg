@@ -1,7 +1,7 @@
 // src/components/StaffManagement.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut, FiTrash2 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -15,46 +15,71 @@ interface User {
   pending_approval?: boolean;
 }
 
+interface AdminUser {
+  email: string;
+  role: string;
+}
+
 export default function StaffManagement() {
   const [isOpen, setIsOpen] = useState(true);
-  const [admin, setAdmin] = useState<{ email: string; role: string } | null>(null);
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const hasInitialized = useRef(false);
 
-  useEffect(() => {
+  const loadUsers = useCallback(async () => {
     try {
-      const storedAdmin = localStorage.getItem("adminUser");
-      if (!storedAdmin) {
-        router.push("/loginAdmin");
-        return;
-      }
-      const parsedAdmin = JSON.parse(storedAdmin);
-      if (parsedAdmin?.role !== "admin" || !parsedAdmin?.email) {
-        localStorage.removeItem("adminUser");
-        router.push("/loginAdmin");
-      } else {
-        setAdmin(parsedAdmin);
-      }
-    } catch (error) {
-      localStorage.removeItem("adminUser");
-      router.push("/loginAdmin");
-    }
-  }, [router]);
-
-  const loadUsers = async () => {
-    try {
+      setIsLoading(true);
       const { pendingUsers, allUsers } = await supabaseActions.fetchUsers();
-      setPendingUsers(pendingUsers);
-      setAllUsers(allUsers);
+      setPendingUsers(pendingUsers || []);
+      setAllUsers(allUsers || []);
     } catch (err) {
       console.error("Error fetching users:", err);
+      setPendingUsers([]);
+      setAllUsers([]);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (admin) loadUsers();
-  }, [admin]);
+  const initialize = useCallback(() => {
+    if (hasInitialized.current) return;
+
+    const checkAuth = () => {
+      try {
+        const storedAdmin = localStorage.getItem("adminUser");
+        if (!storedAdmin) {
+          router.push("/loginAdmin");
+          return false;
+        }
+        const parsedAdmin: AdminUser = JSON.parse(storedAdmin);
+        if (parsedAdmin?.role !== "admin" || !parsedAdmin?.email) {
+          localStorage.removeItem("adminUser");
+          router.push("/loginAdmin");
+          return false;
+        }
+        setAdmin(parsedAdmin);
+        return true;
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.removeItem("adminUser");
+        router.push("/loginAdmin");
+        return false;
+      }
+    };
+
+    const isAuthenticated = checkAuth();
+    if (isAuthenticated) {
+      loadUsers();
+    }
+    hasInitialized.current = true;
+  }, [router, loadUsers]);
+
+  if (!hasInitialized.current) {
+    initialize();
+  }
 
   const handleApproveUser = async (userId: string) => {
     try {
@@ -83,7 +108,18 @@ export default function StaffManagement() {
     }
   };
 
-  if (!admin) return null;
+  const handleLogout = () => {
+    localStorage.removeItem("adminUser");
+    router.push("/loginAdmin");
+  };
+
+  if (!admin || isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-light-blue-400">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen bg-light-blue-400">
@@ -97,18 +133,22 @@ export default function StaffManagement() {
             <h2 className={`text-xl font-bold ${isOpen ? "block" : "hidden"}`}>
               Admin Panel
             </h2>
-            <button onClick={() => setIsOpen(!isOpen)} className="text-black">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-black"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
+            >
               {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
           </div>
           {isOpen && (
-            <div className="p-4 text-xs text-gray-400">{admin?.email}</div>
+            <div className="p-4 text-xs text-gray-400">{admin.email}</div>
           )}
           <nav className="pl-3 mt-4">
             <ul>
               <li className="mb-2">
                 <Link
-                  href="../adminDashboard"
+                  href="/adminDashboard"
                   className="flex items-center p-2 rounded hover:bg-gray-700"
                 >
                   <FiGrid size={20} />
@@ -119,7 +159,7 @@ export default function StaffManagement() {
               </li>
               <li>
                 <Link
-                  href="../staffManagement"
+                  href="/staffManagement"
                   className="flex items-center p-2 rounded hover:bg-gray-700"
                 >
                   <FiUsers size={20} />
@@ -133,14 +173,11 @@ export default function StaffManagement() {
         </div>
         {isOpen && (
           <button
-            onClick={() => {
-              localStorage.removeItem("adminUser");
-              router.push("/loginAdmin");
-            }}
+            onClick={handleLogout}
             className="flex items-center justify-center p-3 m-4 bg-red-600 rounded hover:bg-red-700"
           >
             <FiLogOut size={20} />
-            <span className={`ml-2 ${isOpen ? "block" : "hidden"}`}>Logout</span>
+            <span className="ml-2">Logout</span>
           </button>
         )}
       </aside>
@@ -148,7 +185,6 @@ export default function StaffManagement() {
       <div className="flex-1 p-6">
         <h2 className="text-2xl font-bold mb-4">Staff Management</h2>
 
-        {/* Access Requests Table */}
         <div className="mb-8">
           <h3 className="text-xl font-semibold mb-2">Access Requests</h3>
           {pendingUsers.length === 0 ? (
@@ -192,38 +228,42 @@ export default function StaffManagement() {
           )}
         </div>
 
-        {/* All Users Table */}
         <div>
           <h3 className="text-xl font-semibold mb-2">All Users</h3>
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="p-3 border">User ID</th>
-                <th className="p-3 border">Email</th>
-                <th className="p-3 border">Name</th>
-                <th className="p-3 border">Role</th>
-                <th className="p-3 border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allUsers.map((user) => (
-                <tr key={user.user_id} className="border">
-                  <td className="p-3 border">{user.user_id}</td>
-                  <td className="p-3 border">{user.email}</td>
-                  <td className="p-3 border">{user.name || "N/A"}</td>
-                  <td className="p-3 border">{user.role || "N/A"}</td>
-                  <td className="p-3 border">
-                    <button
-                      onClick={() => handleDeleteUser(user.user_id)}
-                      className="bg-gray-500 text-white p-2 rounded hover:bg-gray-700"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </td>
+          {allUsers.length === 0 ? (
+            <p>No users found.</p>
+          ) : (
+            <table className="min-w-full bg-white border border-gray-200">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="p-3 border">User ID</th>
+                  <th className="p-3 border">Email</th>
+                  <th className="p-3 border">Name</th>
+                  <th className="p-3 border">Role</th>
+                  <th className="p-3 border">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {allUsers.map((user) => (
+                  <tr key={user.user_id} className="border">
+                    <td className="p-3 border">{user.user_id}</td>
+                    <td className="p-3 border">{user.email}</td>
+                    <td className="p-3 border">{user.name || "N/A"}</td>
+                    <td className="p-3 border">{user.role || "N/A"}</td>
+                    <td className="p-3 border">
+                      <button
+                        onClick={() => handleDeleteUser(user.user_id)}
+                        className="bg-gray-500 text-white p-2 rounded hover:bg-gray-700"
+                        aria-label="Delete user"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
