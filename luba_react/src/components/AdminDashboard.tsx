@@ -19,6 +19,7 @@ import {
   Legend,
 } from "chart.js";
 
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface Lab {
@@ -373,7 +374,7 @@ export default function AdminDashboard() {
       const emailSubject = `Lab Booking ${status === "approved" ? "Approved" : "Rejected"}`;
       const emailText = `Dear ${bookingData.users?.name || "User"},\n\nYour booking for ${bookingData.labs?.lab_name || "Unknown Lab"} on ${bookingData.date} from ${bookingData.start_time} to ${bookingData.end_time} has been ${status}.\n\nPurpose: ${bookingData.purpose}\n\nRegards,\nLab Management Team`;
 
-      const emailResponse = await fetch("/api/send-email", {
+      const emailResponse = await fetch("../app/api/send-mail.js", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

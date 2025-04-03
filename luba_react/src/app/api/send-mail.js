@@ -1,3 +1,4 @@
+"use server";
 import FormData from "form-data"; // form-data v4.0.1
 import Mailgun from "mailgun.js"; // mailgun.js v11.1.0
 
@@ -13,7 +14,7 @@ export default async function handler(req, res) {
     username: "api",
     key: process.env.MAILGUN_API_KEY || "YOUR_API_KEY_HERE", // Store API key in environment variable
   });
-
+  console.log(process.env.MAILGUN_API_KEY)
   try {
     const data = await mg.messages.create("sandboxa2cf473bf70b404e8ed67cd111202118.mailgun.org", {
       from: "Mailgun Sandbox <postmaster@sandboxa2cf473bf70b404e8ed67cd111202118.mailgun.org>",
