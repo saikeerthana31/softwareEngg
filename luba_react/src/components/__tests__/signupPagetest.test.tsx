@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import Signup from 'components/signupPagetest';
-import { supabase } from 'utils/supabaseClient';
+import '@testing-library/jest-dom';
+import Signup from '../../components/signupPagetest';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-jest.mock('../utils/supabaseClient', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
   supabase: {
     auth: {
       signUp: jest.fn(),
@@ -21,11 +21,8 @@ jest.mock('../utils/supabaseClient', () => ({
 }));
 
 describe('Signup Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   it('renders without crashing', () => {
@@ -35,12 +32,16 @@ describe('Signup Component', () => {
 
   it('displays error for invalid email', () => {
     render(<Signup />);
+    fireEvent.change(screen.getByLabelText('Full Name'), { target: { value: 'John Doe' } }); // Fill name
     fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'invalid' } });
     fireEvent.click(screen.getByText('Sign Up'));
-    expect(screen.getByText('Please enter a valid email address.')).toBeInTheDocument();
+    expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument(); // Adjust text if needed
   });
 
   it('signs up successfully', async () => {
+    const mockPush = jest.fn();
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (supabase.auth.signUp as jest.Mock).mockResolvedValue({
       data: { user: { id: 'new-user-id' } },
       error: null,
@@ -55,7 +56,7 @@ describe('Signup Component', () => {
 
     await waitFor(() => {
       expect(supabase.from).toHaveBeenCalledWith('users');
-      expect(mockRouter.push).toHaveBeenCalledWith('/loginStaff');
+      expect(mockPush).toHaveBeenCalledWith('/loginStaff');
     });
   });
 

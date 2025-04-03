@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import LoginAdmin from 'components/LoginAdminPage';
-import { supabase } from 'utils/supabaseClient';
+import '@testing-library/jest-dom';
+import LoginAdmin from '../../components/LoginAdminPage';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-jest.mock('../utils/supabaseClient', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
@@ -24,11 +24,8 @@ jest.mock('../utils/supabaseClient', () => ({
 }));
 
 describe('LoginAdmin Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   it('renders without crashing', () => {
@@ -38,12 +35,16 @@ describe('LoginAdmin Component', () => {
 
   it('displays error for invalid email', () => {
     render(<LoginAdmin />);
-    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'invalid' } });
+    const emailInput = screen.getByPlaceholderText(/email/i); // Fallback if label association is broken
+    fireEvent.change(emailInput, { target: { value: 'invalid' } });
     fireEvent.click(screen.getByText('Sign in'));
     expect(screen.getByText('Invalid email format.')).toBeInTheDocument();
   });
 
   it('logs in successfully as admin', async () => {
+    const mockPush = jest.fn();
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'admin-id' } },
       error: null,
@@ -60,17 +61,18 @@ describe('LoginAdmin Component', () => {
     });
 
     render(<LoginAdmin />);
-    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'admin@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: 'admin@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByText('Sign in'));
 
     await waitFor(() => {
       expect(localStorage.getItem('isAdminAuthenticated')).toBe('true');
-      expect(mockRouter.push).toHaveBeenCalledWith('/adminhome');
+      expect(mockPush).toHaveBeenCalledWith('/adminhome');
     });
   });
 
   it('shows error for non-admin role', async () => {
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'student-id' } },
       error: null,
@@ -87,7 +89,7 @@ describe('LoginAdmin Component', () => {
     });
 
     render(<LoginAdmin />);
-    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'student@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: 'student@example.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByText('Sign in'));
 

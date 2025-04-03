@@ -1,16 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StaffManagement from 'components/StaffManagement';
-import * as supabaseActions from '../../actions/supabaseActions';
+import StaffManagement from '../StaffMangement';
 
-// Mock Next.js router
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-// Mock supabaseActions
-jest.mock('../src/actions/supabaseActions', () => ({
+jest.mock('@/actions/supabaseActions', () => ({
   fetchUsers: jest.fn(() =>
     Promise.resolve({
       pendingUsers: [{ user_id: '1', email: 'pending@example.com', name: 'Pending User', pending_approval: true }],
@@ -23,12 +20,9 @@ jest.mock('../src/actions/supabaseActions', () => ({
 }));
 
 describe('StaffManagement Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     localStorage.setItem('adminUser', JSON.stringify({ email: 'admin@example.com', role: 'admin' }));
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   afterEach(() => {
@@ -60,43 +54,50 @@ describe('StaffManagement Component', () => {
   });
 
   it('approves a pending user', async () => {
+    const { approveUser } = jest.requireMock('@/actions/supabaseActions');
     render(<StaffManagement />);
     await waitFor(() => {
       const approveButton = screen.getAllByText('Approve')[0];
       fireEvent.click(approveButton);
-      expect(supabaseActions.approveUser).toHaveBeenCalledWith('1');
+      expect(approveUser).toHaveBeenCalledWith('1');
     });
   });
 
   it('rejects a pending user', async () => {
+    const { rejectUser } = jest.requireMock('@/actions/supabaseActions');
     render(<StaffManagement />);
     await waitFor(() => {
       const rejectButton = screen.getAllByText('Reject')[0];
       fireEvent.click(rejectButton);
-      expect(supabaseActions.rejectUser).toHaveBeenCalledWith('1');
+      expect(rejectUser).toHaveBeenCalledWith('1');
     });
   });
 
   it('deletes a user', async () => {
+    const { deleteUser } = jest.requireMock('@/actions/supabaseActions');
     render(<StaffManagement />);
     await waitFor(() => {
       const deleteButton = screen.getAllByRole('button', { name: /trash/i })[0];
       fireEvent.click(deleteButton);
-      expect(supabaseActions.deleteUser).toHaveBeenCalledWith('2');
+      expect(deleteUser).toHaveBeenCalledWith('2');
     });
   });
 
   it('logs out and redirects when logout button is clicked', () => {
+    const mockPush = jest.fn();
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     render(<StaffManagement />);
     const logoutButton = screen.getByRole('button', { name: /logout/i });
     fireEvent.click(logoutButton);
     expect(localStorage.getItem('adminUser')).toBeNull();
-    expect(mockRouter.push).toHaveBeenCalledWith('/loginAdmin');
+    expect(mockPush).toHaveBeenCalledWith('/loginAdmin');
   });
 
   it('redirects to login if no admin user in localStorage', () => {
+    const mockPush = jest.fn();
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     localStorage.clear();
     render(<StaffManagement />);
-    expect(mockRouter.push).toHaveBeenCalledWith('/loginAdmin');
+    expect(mockPush).toHaveBeenCalledWith('/loginAdmin');
   });
 });

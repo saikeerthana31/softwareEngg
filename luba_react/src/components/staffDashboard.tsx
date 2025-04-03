@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { supabase, supabaseAdmin } from "../utils/supabaseClient";
+import { supabase} from "../utils/supabaseClient";
+import { supabaseAdmin } from "../utils/supabaseAdmin"; // Import your service role client
 
 interface User {
   user_id: string;
@@ -37,7 +38,7 @@ export default function StaffManagement() {
       }
     } catch (error) {
       localStorage.removeItem("adminUser");
-      router.push("/loginAdmin");
+      router.push("/loginStaff");
     }
   }, [router]);
 

@@ -97,9 +97,11 @@ export default function LoginAdmin() {
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           <div>
-            <label className="block text-sm font-medium text-gray-900">
+
+            <label htmlFor="email" className="block text-sm font-medium text-gray-900">
               Email address
             </label>
+          
             <input
               type="email"
               className="block w-full border-b-2 border-gray-400 bg-transparent px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:outline-none"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { supabase } from "../utils/supabaseClient";
+import { supabaseAdmin } from "@/utils/supabaseAdmin";
 import { Bar, Line } from "react-chartjs-2";
 import "react-calendar/dist/Calendar.css";
 import {

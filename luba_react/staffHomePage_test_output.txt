@@ -1,0 +1,61 @@
+
+> luba_react@0.1.0 test
+> jest src/components/__tests__/staffHomePage.test.tsx
+
+  console.error
+    Received `true` for a non-boolean attribute `jsx`.
+    
+    If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}.
+
+      48 |
+      49 |   it('renders without crashing', async () => {
+    > 50 |     render(<StaffHomePage />);
+         |           ^
+      51 |     await waitFor(() => {
+      52 |       expect(screen.getByText(/dashboard/i)).toBeInTheDocument(); // Adjust based on actual text
+      53 |     });
+
+      at validateProperty (node_modules/react-dom/cjs/react-dom-client.development.js:2945:27)
+      at warnUnknownProperties (node_modules/react-dom/cjs/react-dom-client.development.js:3021:9)
+      at validatePropertiesInDevelopment (node_modules/react-dom/cjs/react-dom-client.development.js:16825:9)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:17449:7)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:13775:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15179:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15061:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14334:13)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:190:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:292:10)
+      at Object.<anonymous> (src/components/__tests__/staffHomePage.test.tsx:50:11)
+
+  console.log
+    Authenticated user: { id: 'staff-id', email: 'staff@example.com' }
+
+      at checkAuth (src/components/staffHomePage.tsx:56:17)
+
+  console.log
+    Authenticated user: { id: 'staff-id', email: 'staff@example.com' }
+
+      at checkAuth (src/components/staffHomePage.tsx:56:17)
+
+  console.log
+    Authenticated user: { id: 'staff-id', email: 'staff@example.com' }
+
+      at checkAuth (src/components/staffHomePage.tsx:56:17)
+
+  console.log
+    Authenticated user: { id: 'staff-id', email: 'staff@example.com' }
+
+      at checkAuth (src/components/staffHomePage.tsx:56:17)
+
+  console.log
+    Authenticated user: { id: 'staff-id', email: 'staff@example.com' }
+
+      at checkAuth (src/components/staffHomePage.tsx:56:17)
+

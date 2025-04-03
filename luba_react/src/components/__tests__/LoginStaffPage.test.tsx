@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StaffLogin from 'components/LoginStaffPage';
-import { supabase } from 'utils/supabaseClient';
+import '@testing-library/jest-dom';
+import StaffLogin from '../../components/LoginStaffPage';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-jest.mock('../utils/supabaseClient', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
@@ -24,11 +24,8 @@ jest.mock('../utils/supabaseClient', () => ({
 }));
 
 describe('StaffLogin Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   it('renders without crashing', () => {
@@ -44,6 +41,9 @@ describe('StaffLogin Component', () => {
   });
 
   it('logs in successfully as staff', async () => {
+    const mockPush = jest.fn();
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'staff-id' } },
       error: null,
@@ -52,7 +52,7 @@ describe('StaffLogin Component', () => {
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
           maybeSingle: jest.fn(() => ({
-            data: { role: 'faculty', pending_approval: false },
+            data: { role: 'staff', pending_approval: false },
             error: null,
           })),
         })),
@@ -66,11 +66,12 @@ describe('StaffLogin Component', () => {
 
     await waitFor(() => {
       expect(localStorage.getItem('isStaffAuthenticated')).toBe('true');
-      expect(mockRouter.push).toHaveBeenCalledWith('/staffhome');
+      expect(mockPush).toHaveBeenCalledWith('/staffHome');
     });
   });
 
   it('shows error for non-staff role', async () => {
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'student-id' } },
       error: null,
@@ -92,7 +93,7 @@ describe('StaffLogin Component', () => {
     fireEvent.click(screen.getByText('Sign in'));
 
     await waitFor(() => {
-      expect(screen.getByText('Access denied. Only staff members are allowed.')).toBeInTheDocument();
+      expect(screen.getByText('Access denied. Only staff are allowed.')).toBeInTheDocument();
     });
   });
 });

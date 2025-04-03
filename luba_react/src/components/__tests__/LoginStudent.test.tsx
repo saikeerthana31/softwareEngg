@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import StudentLogin from 'components/LoginStudent';
-import { supabase } from 'utils/supabaseClient';
+import '@testing-library/jest-dom';
+import StudentLogin from '../../components/LoginStudent';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-jest.mock('../utils/supabaseClient', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
@@ -24,11 +24,8 @@ jest.mock('../utils/supabaseClient', () => ({
 }));
 
 describe('StudentLogin Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   it('renders without crashing', () => {
@@ -44,6 +41,9 @@ describe('StudentLogin Component', () => {
   });
 
   it('logs in successfully as student', async () => {
+    const mockPush = jest.fn();
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'student-id' } },
       error: null,
@@ -66,11 +66,12 @@ describe('StudentLogin Component', () => {
 
     await waitFor(() => {
       expect(localStorage.getItem('isStudentAuthenticated')).toBe('true');
-      expect(mockRouter.push).toHaveBeenCalledWith('/studentHome');
+      expect(mockPush).toHaveBeenCalledWith('/studentHome');
     });
   });
 
   it('shows error for non-student role', async () => {
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { user: { id: 'faculty-id' } },
       error: null,

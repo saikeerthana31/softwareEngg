@@ -1,16 +1,30 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import StaffDashboard from '../staffDashboard';
-import * as supabaseActions from '../../actions/supabaseActions';
 
-// Mock Next.js router
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-// Mock supabaseActions
-jest.mock('../../actions/supabaseActions', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
+  supabase: {
+    auth: {
+      getUser: jest.fn(() => Promise.resolve({ data: { user: { id: 'staff-id' } }, error: null })),
+    },
+  },
+}));
+
+jest.mock('@/utils/supabaseAdmin', () => ({
+  supabaseAdmin: {
+    auth: {
+      getUser: jest.fn(() => Promise.resolve({ data: { user: { id: 'staff-id' } }, error: null })),
+    },
+  },
+}));
+
+jest.mock('@/actions/supabaseActions', () => ({
   fetchStaffData: jest.fn(() =>
     Promise.resolve({
       assignedTasks: [{ id: '202', title: 'Grade Assignments' }],
@@ -20,12 +34,9 @@ jest.mock('../../actions/supabaseActions', () => ({
 }));
 
 describe('StaffDashboard Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     localStorage.setItem('staffUser', JSON.stringify({ email: 'staff@example.com' }));
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   afterEach(() => {
@@ -50,17 +61,20 @@ describe('StaffDashboard Component', () => {
   });
 
   it('marks a task as completed', async () => {
+    const { completeTask } = jest.requireMock('@/actions/supabaseActions');
     render(<StaffDashboard />);
     await waitFor(() => {
       const completeButton = screen.getByText('Complete');
       fireEvent.click(completeButton);
-      expect(supabaseActions.completeTask).toHaveBeenCalledWith('202');
+      expect(completeTask).toHaveBeenCalledWith('202');
     });
   });
 
   it('redirects to login if no staff user in localStorage', () => {
+    const mockPush = jest.fn();
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     localStorage.clear();
     render(<StaffDashboard />);
-    expect(mockRouter.push).toHaveBeenCalledWith('/loginStaff');
+    expect(mockPush).toHaveBeenCalledWith('/loginStaff');
   });
 });

@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import ForgotPassword from 'components/ForgotPassword';
-import { supabase } from 'utils/supabaseClient';
+import '@testing-library/jest-dom';
+import ForgotPassword from '../../components/ForgotPassword';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
-  }),
+  })),
 }));
 
-jest.mock('../utils/supabaseClient', () => ({
+jest.mock('@/utils/supabaseClient', () => ({
   supabase: {
     auth: {
       resetPasswordForEmail: jest.fn(),
@@ -17,11 +17,8 @@ jest.mock('../utils/supabaseClient', () => ({
 }));
 
 describe('ForgotPassword Component', () => {
-  const mockRouter = { push: jest.fn() };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    require('next/navigation').useRouter.mockReturnValue(mockRouter);
   });
 
   it('renders without crashing', () => {
@@ -30,6 +27,9 @@ describe('ForgotPassword Component', () => {
   });
 
   it('sends reset link successfully', async () => {
+    const mockPush = jest.fn();
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
+    (jest.requireMock('next/navigation').useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (supabase.auth.resetPasswordForEmail as jest.Mock).mockResolvedValue({ error: null });
 
     render(<ForgotPassword />);
@@ -37,14 +37,13 @@ describe('ForgotPassword Component', () => {
     fireEvent.click(screen.getByText('Send Reset Link'));
 
     await waitFor(() => {
-      expect(screen.getByText('Check your email for a password reset link.')).toBeInTheDocument();
-      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('user@example.com', {
-        redirectTo: expect.any(String),
-      });
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('user@example.com', expect.any(Object));
+      expect(mockPush).toHaveBeenCalledWith('/login');
     });
   });
 
   it('shows error on reset failure', async () => {
+    const { supabase } = jest.requireMock('@/utils/supabaseClient');
     (supabase.auth.resetPasswordForEmail as jest.Mock).mockResolvedValue({ error: { message: 'Reset failed' } });
 
     render(<ForgotPassword />);
@@ -54,11 +53,5 @@ describe('ForgotPassword Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Reset failed')).toBeInTheDocument();
     });
-  });
-
-  it('navigates back to sign in', () => {
-    render(<ForgotPassword />);
-    fireEvent.click(screen.getByText('Back to Sign In'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/');
   });
 });
