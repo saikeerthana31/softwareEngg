@@ -38,6 +38,7 @@
     "@eslint/eslintrc": "^3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -80,7 +81,8 @@
       "^@/components/(.*)$": "<rootDir>/src/components/$1",
       "^@/utils/(.*)$": "<rootDir>/src/utils/$1",
       "^@/actions/(.*)$": "<rootDir>/src/actions/$1",
-      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "^@/(.*)$": "<rootDir>/src/$1"
     }
   }
 }
