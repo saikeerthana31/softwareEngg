@@ -23,23 +23,21 @@ interface Booking {
 }
 
 export default function StudentBookingDashboard() {
-  // Tabs: "book" = make a booking, "active" = active bookings, "history" = all bookings
   const [activeTab, setActiveTab] = useState("book");
   const [labs, setLabs] = useState<Lab[]>([]);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState(""); // e.g., "18:00-19:00"
+  const [selectedSlot, setSelectedSlot] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [student, setStudent] = useState<any>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Returns an array of time slots based on the day of the week.
   const getTimeSlots = (date: Date): string[] => {
-    const day = date.getDay(); // Sunday=0, Saturday=6
+    const day = date.getDay();
     if (day === 0 || day === 6) {
-      // Weekend: one-hour slots from 08:00 to 21:00 (last slot: 20:00-21:00)
       const slots: string[] = [];
       for (let hour = 8; hour < 21; hour++) {
         const start = hour.toString().padStart(2, "0") + ":00";
@@ -48,72 +46,66 @@ export default function StudentBookingDashboard() {
       }
       return slots;
     } else {
-      // Weekday: three slots only (6-7PM, 7-8PM, 8-9PM)
       return ["18:00-19:00", "19:00-20:00", "20:00-21:00"];
     }
   };
 
-  // Format a Date to YYYY-MM-DD
   const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
-  // Fetch the current user using Supabase Auth
   useEffect(() => {
     const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setStudent(user);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          setStudent(user);
+          setUserId(user.id as string);
+        } else {
+          window.location.replace("http://localhost:3000/loginStudent");
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        window.location.replace("http://localhost:3000/loginStudent");
+      } finally {
+        setLoading(false);
       }
     };
     fetchUser();
   }, []);
-    useEffect(() => {
-      const checkAuth = async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          window.location.href = "/loginStudent";
-        } else {
-          setUserId(user.id as string);
-        }
-      };
 
-      checkAuth();
-      history.replaceState({}, "", location.href);
-    }, []);
-
-  // Once the student is loaded, fetch available labs and all of the student's bookings.
   useEffect(() => {
     if (!student) return;
 
-    const fetchLabs = async () => {
-      const { data, error } = await supabase.from("labs").select("*");
-      if (error) {
-        console.error("Error fetching labs:", error.message);
-      } else {
-        setLabs(data as Lab[]);
+    const fetchData = async () => {
+      try {
+        const [labsResponse, bookingsResponse] = await Promise.all([
+          supabase.from("labs").select("*"),
+          supabase
+            .from("student_bookings")
+            .select("*")
+            .eq("user_id", student.id),
+        ]);
+
+        if (labsResponse.error) {
+          console.error("Error fetching labs:", labsResponse.error.message);
+        } else {
+          setLabs(labsResponse.data as Lab[]);
+        }
+
+        if (bookingsResponse.error) {
+          console.warn("Error fetching bookings:", bookingsResponse.error.message);
+        } else if (bookingsResponse.data) {
+          setBookings(bookingsResponse.data as Booking[]);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
     };
 
-    const fetchBookings = async () => {
-      const { data, error } = await supabase
-        .from("student_bookings")
-        .select("*")
-        .eq("user_id", student.id);
-      if (error) {
-        console.warn("Error fetching bookings:", error.message);
-      } else if (data) {
-        setBookings(data as Booking[]);
-      }
-    };
-
-    fetchLabs();
-    fetchBookings();
+    fetchData();
   }, [student]);
 
-  // Handler for booking a lab.
   const handleBookLab = async () => {
     setError("");
     setSuccess("");
@@ -134,7 +126,6 @@ export default function StudentBookingDashboard() {
       setError("Please select a time slot.");
       return;
     }
-    // Check if the student already has an active booking for the selected lab.
     const existingBooking = bookings.find(
       (b) => b.lab_id === selectedLab.lab_id && b.status === "active",
     );
@@ -162,7 +153,6 @@ export default function StudentBookingDashboard() {
       return;
     }
 
-    // Decrement lab capacity by one.
     const { error: updateError } = await supabase
       .from("labs")
       .update({ capacity: selectedLab.capacity - 1 })
@@ -186,7 +176,6 @@ export default function StudentBookingDashboard() {
     setSelectedSlot("");
   };
 
-  // Handler for cancelling a booking by updating its status to "cancelled"
   const handleCancelBooking = async (booking: Booking) => {
     setError("");
     setSuccess("");
@@ -205,7 +194,6 @@ export default function StudentBookingDashboard() {
       return;
     }
 
-    // Increase the lab capacity by one.
     const labToUpdate = labs.find((lab) => lab.lab_id === booking.lab_id);
     if (labToUpdate) {
       const { error: capacityError } = await supabase
@@ -233,16 +221,24 @@ export default function StudentBookingDashboard() {
     setSuccess("Booking cancelled successfully.");
   };
 
-  // Derive active bookings and full booking history.
   const activeBookings = bookings.filter((b) => b.status === "active");
-  const bookingHistory = bookings; // Includes both active and cancelled.
+  const bookingHistory = bookings;
 
-  // Compute available time slots based on the selected date.
   const availableTimeSlots = getTimeSlots(selectedDate ?? new Date());
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <header className="bg-blue-600 text-white py-4 px-6 shadow flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Student Booking Dashboard</h1>
+        </header>
+        <main className="p-6">Loading...</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header with Tabs and Logout */}
       <header className="bg-blue-600 text-white py-4 px-6 shadow flex justify-between items-center">
         <h1 className="text-2xl font-bold">Student Booking Dashboard</h1>
         <div className="space-x-4">
@@ -282,7 +278,6 @@ export default function StudentBookingDashboard() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="p-6">
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -295,32 +290,34 @@ export default function StudentBookingDashboard() {
           </div>
         )}
 
-        {/* "Book Lab" Tab */}
         {activeTab === "book" && (
           <>
             <h2 className="text-xl font-bold mb-4">Available Labs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {labs.map((lab) => (
-                <div
-                  key={lab.lab_id}
-                  className="bg-white shadow-lg rounded p-4 cursor-pointer hover:shadow-2xl transition-all"
-                  onClick={() => setSelectedLab(lab)}
-                >
-                  <h2 className="text-xl font-semibold mb-2">{lab.lab_name}</h2>
-                  <p className="text-gray-600 mb-2">{lab.location}</p>
-                  <p className="text-sm text-gray-500">
-                    Available Systems: {lab.capacity}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {lab.description || "No description"}
-                  </p>
-                </div>
-              ))}
-            </div>
+            {Array.isArray(labs) && labs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {labs.map((lab) => (
+                  <div
+                    key={lab.lab_id}
+                    className="bg-white shadow-lg rounded p-4 cursor-pointer hover:shadow-2xl transition-all"
+                    onClick={() => setSelectedLab(lab)}
+                  >
+                    <h2 className="text-xl font-semibold mb-2">{lab.lab_name}</h2>
+                    <p className="text-gray-600 mb-2">{lab.location}</p>
+                    <p className="text-sm text-gray-500">
+                      Available Systems: {lab.capacity}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {lab.description || "No description"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No labs available at the moment.</p>
+            )}
           </>
         )}
 
-        {/* Booking Modal */}
         {activeTab === "book" && selectedLab && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="bg-white rounded p-6 w-full max-w-md">
@@ -336,7 +333,6 @@ export default function StudentBookingDashboard() {
                 <label className="block text-gray-700 font-bold mb-2">
                   Select Date:
                 </label>
-                323 |{" "}
                 <Calendar
                   onChange={(value) =>
                     setSelectedDate(value instanceof Date ? value : null)
@@ -377,7 +373,6 @@ export default function StudentBookingDashboard() {
           </div>
         )}
 
-        {/* "My Active Bookings" Tab */}
         {activeTab === "active" && (
           <div>
             <h2 className="text-xl font-bold mb-4">My Active Bookings</h2>
@@ -417,7 +412,6 @@ export default function StudentBookingDashboard() {
           </div>
         )}
 
-        {/* "Booking History" Tab */}
         {activeTab === "history" && (
           <div>
             <h2 className="text-xl font-bold mb-4">Booking History</h2>
