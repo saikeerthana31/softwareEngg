@@ -75,9 +75,9 @@
 # Tech Stack Evaluation for a Full-Stack Application
 
 *Overview*:
-```
+
 The proposed tech stack for a full-stack application comprises Node.js and React.js for the front-end, and Supabase and Mailgun for the back-end. This combination leverages modern, scalable, and efficient technologies tailored to the needs of a full-stack app. Below is an analysis of why this tech stack is advantageous, organized by component. 
-```
+
 
 <b> *Front-End: Node.js and React.js* </b>
 
@@ -105,6 +105,7 @@ Node.js as the runtime complements React.js, enabling a JavaScript-centric workf
 
  
 <b> *Back-End: Supabase and Mailgun* </b>
+
 *1. Supabase*
 <ul>
  <li>Open-Source BaaS </li>
