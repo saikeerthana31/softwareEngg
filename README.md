@@ -46,15 +46,12 @@
 <b> Bug Density Evaluation </b>
 
 *Calculation*:
-
+```
 Total Bugs: 18 
-
 Total Lines of Code (LOC): 32,000 
-
 Bug Density Formula: (Total Bugs / Total LOC) × 1000 
-
 Result: (18 / 32,000) × 1000 = 0.5625 bugs per 1000 LOC 
-
+```
  
 <ul>
  <li>A bug density of 0.56 bugs per 1000 LOC is considered very good. </li>
