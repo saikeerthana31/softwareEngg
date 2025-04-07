@@ -81,7 +81,7 @@ The proposed tech stack for a full-stack application comprises Node.js and React
 
 <b> *Front-End: Node.js and React.js* </b>
 
-*1. Node.js*
+*1. Node.js Features:*
 <ul>
  <li>JavaScript Runtime</li>
   <li>Efficient Build Tools</li>
@@ -89,7 +89,7 @@ The proposed tech stack for a full-stack application comprises Node.js and React
   <li>Ecosystem </li>
 </ul>
 
-*2. React.js*
+*2. React.js Features:*
 <ul>
  <li>Component-Based Architecture </li>
  <li>Virtual DOM</li>
@@ -106,7 +106,7 @@ Node.js as the runtime complements React.js, enabling a JavaScript-centric workf
  
 <b> *Back-End: Supabase and Mailgun* </b>
 
-*1. Supabase*
+*1. Supabase Features:*
 <ul>
  <li>Open-Source BaaS </li>
   <li>Scalability</li>
@@ -116,7 +116,7 @@ Node.js as the runtime complements React.js, enabling a JavaScript-centric workf
 </ul>
 
 
-*2. Mailgun*
+*2. Mailgun Features:*
 <ul>
  <li>Email Automation</li>
   <li>Reliability</li>
