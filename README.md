@@ -85,7 +85,7 @@ The proposed tech stack for a full-stack application comprises Node.js and React
 <ul>
  <li>JavaScript Runtime</li>
   <li>Efficient Build Tools</li>
-  <li><Scalability/li>
+  <li>Scalability</li>
   <li>Ecosystem </li>
 </ul>
 
