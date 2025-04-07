@@ -1,4 +1,5 @@
-# softwareEngg - TEAM A1
+# SoftwareEngg - TEAM A1
+# Lab Utilizaton and Booking Application
 
 
 <b> Epic 1: User Authentication and Profile Management </b>
