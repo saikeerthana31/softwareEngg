@@ -41,3 +41,25 @@
  <li>Notifications for booking confirmations and cancellations were successfully triggered via both in-app and email systems. </li>
  <li>The system ensured users were kept in the loop about changes to their bookings. </li>
 </ul>
+
+
+<b> Bug Density Evaluation </b>
+
+*Calculation*:
+
+Total Bugs: 18 
+
+Total Lines of Code (LOC): 32,000 
+
+Bug Density Formula: (Total Bugs / Total LOC) × 1000 
+
+Result: (18 / 32,000) × 1000 = 0.5625 bugs per 1000 LOC 
+
+ 
+<ul>
+ <li>A bug density of 0.56 bugs per 1000 LOC is considered very good. </li>
+ <li>Code Stability: Indicates a reliable and robust codebase. </li>
+ <li>Fewer Defects: Low defect rate relative to the codebase size. </li>
+ <li>Good Testing Practices: Suggests effective testing processes are in place. </li>
+ <li>Decent Architecture: Likely reflects well-structured and maintainable code. </li>
+</ul>
