@@ -55,8 +55,8 @@ Result: (18 / 32,000) × 1000 = 0.5625 bugs per 1000 LOC
  
 <ul>
  <li>A bug density of 0.56 bugs per 1000 LOC is considered very good. </li>
- <li>Code Stability: Indicates a reliable and robust codebase. </li>
- <li>Fewer Defects: Low defect rate relative to the codebase size. </li>
- <li>Good Testing Practices: Suggests effective testing processes are in place. </li>
- <li>Decent Architecture: Likely reflects well-structured and maintainable code. </li>
+ <li><b>Code Stability:</b> Indicates a reliable and robust codebase. </li>
+ <li><b>Fewer Defects:</b>  Low defect rate relative to the codebase size. </li>
+ <li><b>Good Testing Practices: </b> Suggests effective testing processes are in place. </li>
+ <li><b>Decent Architecture:</b>  Likely reflects well-structured and maintainable code. </li>
 </ul>
