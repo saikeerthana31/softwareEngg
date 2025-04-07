@@ -1,5 +1,6 @@
 # softwareEngg - TEAM A1
 
+
 <b> Epic 1: User Authentication and Profile Management </b>
 
 <ul>
@@ -7,6 +8,10 @@
  <li>Profile management allowed users to update their personal data securely and easily. </li>
  <li>The validation mechanisms helped reduce garbage input and improved overall form reliability. </li>
 </ul>
+
+<img width="625" alt="Screenshot 2025-04-07 at 10 41 46 PM" src="https://github.com/user-attachments/assets/22abd3ae-bf7c-4914-8c29-8d3ef5ec5c77" />
+<img width="625" alt="Screenshot 2025-04-07 at 10 42 07 PM" src="https://github.com/user-attachments/assets/118bd767-4b77-4cb3-900d-49b60e956bcb" />
+<img width="625" alt="Screenshot 2025-04-07 at 10 42 19 PM" src="https://github.com/user-attachments/assets/1365151e-1062-45e4-b078-75feb0b294d8" />
 
 
 <b> Epic 2: Lab Booking System </b>
@@ -17,6 +22,17 @@
  <li>Confirmation messages and email-based notifications were functional and well-received during testing. </li>
 </ul>
 
+*STAFF SIDE*:
+<img width="601" alt="Screenshot 2025-04-07 at 10 42 40 PM" src="https://github.com/user-attachments/assets/814b2edc-027c-4c66-99af-c553db789b38" />
+<img width="624" alt="Screenshot 2025-04-07 at 10 42 53 PM" src="https://github.com/user-attachments/assets/99017083-9ff4-441b-99fe-2d2d32dca18c" />
+<img width="623" alt="Screenshot 2025-04-07 at 10 43 02 PM" src="https://github.com/user-attachments/assets/ce234c6a-9435-4ee0-b778-3bf3bd36979d" />
+
+*STUDENT SIDE*:
+<img width="622" alt="Screenshot 2025-04-07 at 10 43 48 PM" src="https://github.com/user-attachments/assets/c197a83e-f70f-4a29-8ab6-69b536327c31" />
+<img width="623" alt="Screenshot 2025-04-07 at 10 43 59 PM" src="https://github.com/user-attachments/assets/ada95db2-c0eb-4ba7-8ad1-da48391b4b41" />
+<img width="628" alt="Screenshot 2025-04-07 at 10 44 12 PM" src="https://github.com/user-attachments/assets/b11e5815-a032-415c-9d53-cdd53f0e6ddc" />
+<img width="625" alt="Screenshot 2025-04-07 at 10 44 24 PM" src="https://github.com/user-attachments/assets/80ae655a-09c7-487b-8a91-76c7a6b5496b" />
+
 
 <b> Epic 3: Lab Utilization Dashboard </b>
 
@@ -26,6 +42,10 @@
  <li>Admins could generate usage reports to assess demand and lab occupancy trends. </li>
 </ul>
 
+<img width="624" alt="Screenshot 2025-04-07 at 10 44 38 PM" src="https://github.com/user-attachments/assets/30579bfa-ec94-44c4-9669-ade69cbc5f73" />
+<img width="601" alt="Screenshot 2025-04-07 at 10 44 52 PM" src="https://github.com/user-attachments/assets/43c3d1bc-ba3e-40e3-bac8-f900afa249ed" />
+<img width="624" alt="Screenshot 2025-04-07 at 10 45 04 PM" src="https://github.com/user-attachments/assets/8831cd7e-f606-439f-a6ed-1dfd6878b649" />
+
 
 <b> Epic 4: Lab Management for Administrators </b>
 
@@ -34,6 +54,10 @@
  <li>Proper input validation prevented invalid lab details and ensured consistency in lab data. </li>
 </ul>
 
+<img width="631" alt="Screenshot 2025-04-07 at 10 45 16 PM" src="https://github.com/user-attachments/assets/97b083eb-388b-47c8-a19d-8baf8bcf0305" />
+<img width="627" alt="Screenshot 2025-04-07 at 10 45 42 PM" src="https://github.com/user-attachments/assets/dcabb838-147c-47da-ba01-8dcbd5f925fa" />
+<img width="623" alt="Screenshot 2025-04-07 at 10 45 55 PM" src="https://github.com/user-attachments/assets/6f5218d1-3154-4a7d-8245-ef2c1206e324" />
+
 
 <b> Epic 5: Notification and Alert System </b>
 
@@ -41,6 +65,8 @@
  <li>Notifications for booking confirmations and cancellations were successfully triggered via both in-app and email systems. </li>
  <li>The system ensured users were kept in the loop about changes to their bookings. </li>
 </ul>
+
+<img width="627" alt="Screenshot 2025-04-07 at 10 46 12 PM" src="https://github.com/user-attachments/assets/42598bca-7a1f-40b7-9388-c1b1831eb531" />
 
 
 <b> Bug Density Evaluation </b>
