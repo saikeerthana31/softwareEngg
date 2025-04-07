@@ -72,9 +72,75 @@
 
 <img width="625" alt="Screenshot 2025-04-07 at 10 46 12 PM" src="https://github.com/user-attachments/assets/42598bca-7a1f-40b7-9388-c1b1831eb531" />
 
+<b> Tech Stack Evaluation for a Full-Stack Application </b>
+
+*Overview*:
+```
+The proposed tech stack for a full-stack application comprises Node.js and React.js for the front-end, and Supabase and Mailgun for the back-end. This combination leverages modern, scalable, and efficient technologies tailored to the needs of a full-stack app. Below is an analysis of why this tech stack is advantageous, organized by component. 
+```
+
+<b> *Front-End: Node.js and React.js* </b>
+```
+*1. Node.js*
+<ul>
+ <li>JavaScript Runtime</li>
+  <li>Efficient Build Tools</li>
+  <li><Scalability/li>
+   <li>Ecosystem </li>
+</ul>
+
+*2. React.js*
+<ul>
+ <li>Component-Based Architecture </li>
+ <li>Virtual DOM</li>
+ <li>Rich Ecosystem</li>
+ <li>Community and Support</li>
+ <li>Flexibility </li>
+</ul>
+
+
+<b>Why It Works Together: </b>
+
+Node.js as the runtime complements React.js, enabling a JavaScript-centric workflow. This synergy simplifies tooling (e.g., dev servers) and supports isomorphic JavaScript (code sharing between client and server), enhancing efficiency and consistency. 
+```
+ 
+<b> *Back-End: Supabase and Mailgun* </b>
+```
+*1. Supabase*
+<ul>
+ <li>Open-Source BaaS </li>
+  <li>Scalability</li>
+  <li>Real-Time Features</li>
+  <li>Developer Experience</li>
+  <li>Cost-Effective</li>
+</ul>
+
+
+*2. Mailgun*
+<ul>
+ <li>Email Automation</li>
+  <li>Reliability</li>
+  <li>API Integration</li>
+  <li>Analytics</li>
+  <li>Scalability</li>
+</ul>
+
+
+<b>Why It Works Together </b>
+Supabase manages core back-end functions (database, auth, APIs), while Mailgun offloads email tasks. This separation keeps the architecture lightweight, with Supabase handling data/logic and Mailgun ensuring reliable user communication. 
+```
+ 
+<b>Overall Benefits of the Tech Stack: </b>
+<ul>
+ <li><b> Unified JavaScript Workflow:</b> Node.js, React.js, and Supabase’s JS-friendly APIs enable code reuse and reduce the learning curve. </li>
+ <li><b> Rapid Development:</b>  React’s components, Supabase’s pre-built features, and Mailgun’s email solution minimize setup time, focusing effort on app logic and UX. </li>
+ <li><b> Scalability:</b>  Node.js (event-driven), React (efficient rendering), Supabase (PostgreSQL-based), and Mailgun (email volume) scale with demand. </li>
+ <li><b> Cost Efficiency: </b> Open-source tools (Node.js, React.js, Supabase) and affordable services (Mailgun) keep costs low, especially for MVPs or small-to-medium apps. </li>
+ <li><b> Modern and Future-Proof: </b> Widely adopted and actively maintained, this stack ensures compatibility with future trends and libraries. </li>
+</ul>
+
 
 <b> Bug Density Evaluation </b>
-
 *Calculation*:
 ```
 Total Bugs: 18 
@@ -82,7 +148,6 @@ Total Lines of Code (LOC): 32,000
 Bug Density Formula: (Total Bugs / Total LOC) × 1000 
 Result: (18 / 32,000) × 1000 = 0.5625 bugs per 1000 LOC 
 ```
- 
 <ul>
  <li>A bug density of 0.56 bugs per 1000 LOC is considered very good. </li>
  <li><b>Code Stability:</b> Indicates a reliable and robust codebase. </li>
