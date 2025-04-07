@@ -72,7 +72,7 @@
 
 <img width="625" alt="Screenshot 2025-04-07 at 10 46 12 PM" src="https://github.com/user-attachments/assets/42598bca-7a1f-40b7-9388-c1b1831eb531" />
 
-<b> Tech Stack Evaluation for a Full-Stack Application </b>
+# Tech Stack Evaluation for a Full-Stack Application
 
 *Overview*:
 ```
@@ -138,7 +138,7 @@ Supabase manages core back-end functions (database, auth, APIs), while Mailgun o
 </ul>
 
 
-<b> Bug Density Evaluation </b>
+# Bug Density Evaluation 
 *Calculation*:
 ```
 Total Bugs: 18 
