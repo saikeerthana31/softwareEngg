@@ -80,7 +80,7 @@ The proposed tech stack for a full-stack application comprises Node.js and React
 ```
 
 <b> *Front-End: Node.js and React.js* </b>
-```
+
 *1. Node.js*
 <ul>
  <li>JavaScript Runtime</li>
@@ -102,10 +102,9 @@ The proposed tech stack for a full-stack application comprises Node.js and React
 <b>Why It Works Together: </b>
 
 Node.js as the runtime complements React.js, enabling a JavaScript-centric workflow. This synergy simplifies tooling (e.g., dev servers) and supports isomorphic JavaScript (code sharing between client and server), enhancing efficiency and consistency. 
-```
+
  
 <b> *Back-End: Supabase and Mailgun* </b>
-```
 *1. Supabase*
 <ul>
  <li>Open-Source BaaS </li>
@@ -128,7 +127,6 @@ Node.js as the runtime complements React.js, enabling a JavaScript-centric workf
 
 <b>Why It Works Together </b>
 Supabase manages core back-end functions (database, auth, APIs), while Mailgun offloads email tasks. This separation keeps the architecture lightweight, with Supabase handling data/logic and Mailgun ensuring reliable user communication. 
-```
  
 <b>Overall Benefits of the Tech Stack: </b>
 <ul>
