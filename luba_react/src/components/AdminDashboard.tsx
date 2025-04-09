@@ -375,7 +375,7 @@ export default function AdminDashboard() {
       const emailSubject = `Lab Booking ${status === "approved" ? "Approved" : "Rejected"}`;
       const emailText = `Dear ${bookingData.users?.name || "User"},\n\nYour booking for ${bookingData.labs?.lab_name || "Unknown Lab"} on ${bookingData.date} from ${bookingData.start_time} to ${bookingData.end_time} has been ${status}.\n\nPurpose: ${bookingData.purpose}\n\nRegards,\nLab Management Team`;
 
-      const emailResponse = await fetch("../app/api/send-mail.js", {
+      const emailResponse = await fetch("/api/send_mail", { // Changed from "../app/api/send-mail.js"
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
           text: emailText,
         }),
       });
-
+      
       if (!emailResponse.ok) {
         const errorData = await emailResponse.json();
         console.error("Error sending email:", errorData);

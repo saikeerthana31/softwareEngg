@@ -1,7 +1,7 @@
 // src/components/__tests__/StaffManagement.test.tsx
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { act } from 'react'; // Updated import
-import StaffManagement from '../StaffMangement';
+import { act } from 'react';
+import StaffMangement from '../StaffMangement';
 import * as supabaseActions from '@/actions/supabaseActions';
 
 jest.mock('next/navigation', () => ({
@@ -34,18 +34,20 @@ describe('StaffManagement', () => {
 
   it('renders without crashing', async () => {
     await act(async () => {
-      render(<StaffManagement />);
+      render(<StaffMangement />);
     });
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+
     await waitFor(() => {
-      // Use getByRole to target the main heading specifically
       expect(screen.getByRole('heading', { name: /Staff Management/i })).toBeInTheDocument();
     });
   });
 
   it('loads and displays pending users', async () => {
     await act(async () => {
-      render(<StaffManagement />);
+      render(<StaffMangement />);
     });
+
     await waitFor(() => {
       expect(screen.getByText('pending@example.com')).toBeInTheDocument();
       expect(screen.getByText('Pending User')).toBeInTheDocument();
@@ -55,14 +57,17 @@ describe('StaffManagement', () => {
 
   it('toggles sidebar when menu button is clicked', async () => {
     await act(async () => {
-      render(<StaffManagement />);
+      render(<StaffMangement />);
     });
 
-    const menuButton = await screen.findByRole('button', { name: /Close menu/i });
-    const sidebar = screen.getByRole('complementary'); // The <aside> is typically a complementary landmark
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Staff Management/i })).toBeInTheDocument();
+    });
+
+    const menuButton = screen.getByRole('button', { name: /Close menu/i });
+    const sidebar = screen.getByRole('complementary');
     const adminPanelHeading = screen.getByText('Admin Panel');
 
-    // Initially open (w-64)
     expect(sidebar).toHaveClass('w-64');
     expect(adminPanelHeading).toHaveClass('block');
 
@@ -70,20 +75,21 @@ describe('StaffManagement', () => {
       fireEvent.click(menuButton);
     });
 
-    await waitFor(() => {
-      // After click, should be closed (w-16)
-      expect(sidebar).toHaveClass('w-16');
-      expect(adminPanelHeading).toHaveClass('hidden');
-    });
+    expect(sidebar).toHaveClass('w-16');
+    expect(adminPanelHeading).toHaveClass('hidden');
   });
 
   it('deletes a user', async () => {
     await act(async () => {
-      render(<StaffManagement />);
+      render(<StaffMangement />);
     });
 
-    const deleteButtons = await screen.findAllByRole('button', { name: /Delete user/i });
-    expect(screen.getByText('user@example.com')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('user@example.com')).toBeInTheDocument();
+    });
+
+    const deleteButtons = screen.getAllByRole('button', { name: /Delete user/i });
+    expect(deleteButtons).toHaveLength(1);
 
     await act(async () => {
       fireEvent.click(deleteButtons[0]);
@@ -91,7 +97,25 @@ describe('StaffManagement', () => {
 
     await waitFor(() => {
       expect(supabaseActions.deleteUser).toHaveBeenCalledWith('2');
-      expect(supabaseActions.fetchUsers).toHaveBeenCalledTimes(2); // Initial + after delete
+      expect(supabaseActions.fetchUsers).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('redirects to login if no admin user is found', async () => {
+    localStorage.clear();
+    const mockPush = jest.fn();
+    jest.mock('next/navigation', () => ({
+      useRouter: () => ({
+        push: mockPush,
+      }),
+    }));
+
+    await act(async () => {
+      render(<StaffMangement />);
+    });
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/loginAdmin');
     });
   });
 });

@@ -1,7 +1,7 @@
 // src/components/StaffManagement.tsx
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { FiMenu, FiX, FiGrid, FiUsers, FiLogOut, FiTrash2 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -44,42 +44,43 @@ export default function StaffManagement() {
     }
   }, []);
 
-  const initialize = useCallback(() => {
-    if (hasInitialized.current) return;
-
-    const checkAuth = () => {
-      try {
-        const storedAdmin = localStorage.getItem("adminUser");
-        if (!storedAdmin) {
-          router.push("/loginAdmin");
-          return false;
-        }
-        const parsedAdmin: AdminUser = JSON.parse(storedAdmin);
-        if (parsedAdmin?.role !== "admin" || !parsedAdmin?.email) {
-          localStorage.removeItem("adminUser");
-          router.push("/loginAdmin");
-          return false;
-        }
-        setAdmin(parsedAdmin);
-        return true;
-      } catch (error) {
-        console.error("Auth check failed:", error);
+  const checkAuth = useCallback(() => {
+    try {
+      const storedAdmin = localStorage.getItem("adminUser");
+      if (!storedAdmin) {
+        router.push("/loginAdmin");
+        return null;
+      }
+      const parsedAdmin: AdminUser = JSON.parse(storedAdmin);
+      if (parsedAdmin?.role !== "admin" || !parsedAdmin?.email) {
         localStorage.removeItem("adminUser");
         router.push("/loginAdmin");
-        return false;
+        return null;
       }
+      return parsedAdmin;
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      localStorage.removeItem("adminUser");
+      router.push("/loginAdmin");
+      return null;
+    }
+  }, [router]);
+
+  // Initialize the component using useEffect
+  useEffect(() => {
+    if (hasInitialized.current) return;
+
+    const initialize = async () => {
+      const authenticatedAdmin = checkAuth();
+      if (authenticatedAdmin) {
+        setAdmin(authenticatedAdmin);
+        await loadUsers();
+      }
+      hasInitialized.current = true;
     };
 
-    const isAuthenticated = checkAuth();
-    if (isAuthenticated) {
-      loadUsers();
-    }
-    hasInitialized.current = true;
-  }, [router, loadUsers]);
-
-  if (!hasInitialized.current) {
     initialize();
-  }
+  }, [checkAuth, loadUsers]); // Dependencies ensure this runs only when needed
 
   const handleApproveUser = async (userId: string) => {
     try {
